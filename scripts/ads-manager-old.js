@@ -1,22 +1,12 @@
 // scripts/ads-manager.js
-// Enhanced with development mode detection and safe ad practices
-
-// Development environment detection
-const isDevelopment = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname.includes('github.io');
-
 class AdManager {
     constructor() {
         this.adZone = '9803188';
         this.adsShown = 0;
-        this.maxAdsPerSession = isDevelopment ? 2 : 5; // Fewer ads in development
-        this.adInterval = isDevelopment ? 60000 : 30000; // Longer interval in development (60s vs 30s)
+        this.maxAdsPerSession = 2;
+        this.adInterval = 30000; // 30 seconds
         this.lastAdTime = 0;
         this.isInitialized = false;
-        this.userInteractions = 0;
-        
-        console.log('Ad Manager initialized in', isDevelopment ? 'Development' : 'Production', 'mode');
     }
 
     init() {
@@ -28,15 +18,8 @@ class AdManager {
         // Setup ad containers
         this.setupAdContainers();
         
-        // Setup interstitial ads - but only if not in development
-        if (!isDevelopment) {
-            this.setupInterstitialAds();
-        } else {
-            console.log('Development mode: Skipping automatic ad setup');
-        }
-        
-        // Track user interactions
-        this.setupInteractionTracking();
+        // Setup interstitial ads
+        this.setupInterstitialAds();
     }
 
     setupAdContainers() {
@@ -47,42 +30,6 @@ class AdManager {
             adContainer.style.cssText = 'width: 100%; min-height: 100px; margin: 20px 0; display: flex; align-items: center; justify-content: center; background: #1e1e1e; border-radius: 8px;';
             document.body.appendChild(adContainer);
         }
-    }
-
-    setupInteractionTracking() {
-        // Track clicks, scrolls, and other interactions
-        document.addEventListener('click', () => this.trackUserInteraction());
-        document.addEventListener('scroll', () => this.trackUserInteraction());
-        
-        // Track tab changes/page navigation in your app
-        if (typeof window.showPosts === 'function') {
-            const originalShowPosts = window.showPosts;
-            window.showPosts = () => {
-                this.trackUserInteraction();
-                return originalShowPosts();
-            };
-        }
-        
-        if (typeof window.showTrending === 'function') {
-            const originalShowTrending = window.showTrending;
-            window.showTrending = () => {
-                this.trackUserInteraction();
-                return originalShowTrending();
-            };
-        }
-        
-        if (typeof window.showFollowing === 'function') {
-            const originalShowFollowing = window.showFollowing;
-            window.showFollowing = () => {
-                this.trackUserInteraction();
-                return originalShowFollowing();
-            };
-        }
-    }
-
-    trackUserInteraction() {
-        this.userInteractions++;
-        console.log('User interaction tracked:', this.userInteractions);
     }
 
     setupInterstitialAds() {
@@ -138,34 +85,13 @@ class AdManager {
         const now = Date.now();
         const timeSinceLastAd = now - this.lastAdTime;
         
-        if (isDevelopment) {
-            // Very restrictive in development - only show after multiple interactions
-            // and with longer intervals between ads
-            return this.adsShown < this.maxAdsPerSession && 
-                   this.userInteractions > 3 &&
-                   timeSinceLastAd > this.adInterval;
-        }
-        
-        // Normal rules for production
         return this.adsShown < this.maxAdsPerSession && 
                timeSinceLastAd > this.adInterval;
     }
 
     // In-App Interstitial
     showInAppInterstitial() {
-        if (!this.canShowAd()) {
-            console.log('Ad not shown - conditions not met');
-            return;
-        }
-        
-        // In development, show mock ads instead of real ones
-        if (isDevelopment) {
-            console.log('Development: Would show interstitial ad now');
-            this.adsShown++;
-            this.lastAdTime = Date.now();
-            this.showMockAd('interstitial');
-            return;
-        }
+        if (!this.canShowAd()) return;
         
         try {
             show_9803188({
@@ -190,39 +116,9 @@ class AdManager {
         }
     }
 
-    // Show a mock ad for development
-    showMockAd(type) {
-        const adContainer = document.getElementById('monetag-ad-container') || document.getElementById('ad-container');
-        if (adContainer) {
-            adContainer.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <h3>Development Mode: Mock Ad</h3>
-                    <p>This would be a ${type} ad in production</p>
-                    <p>User Interactions: ${this.userInteractions}</p>
-                    <p>Ads Shown: ${this.adsShown}</p>
-                    <button onclick="window.monetagAdManager.trackUserInteraction()" style="padding: 10px; background: #4a76d0; color: white; border: none; border-radius: 4px;">
-                        Simulate Interaction
-                    </button>
-                </div>
-            `;
-        }
-        
-        // Log ad impression for debugging
-        console.log(`Mock ${type} ad shown. Interactions: ${this.userInteractions}, Ads: ${this.adsShown}`);
-    }
-
     // Rewarded Interstitial
     showRewardedInterstitial() {
         return new Promise((resolve, reject) => {
-            // In development, show mock ad
-            if (isDevelopment) {
-                console.log('Development: Would show rewarded interstitial now');
-                this.showMockAd('rewardedInterstitial');
-                this.rewardUser();
-                resolve(true);
-                return;
-            }
-            
             try {
                 show_9803188().then(() => {
                     console.log('Rewarded interstitial completed');
@@ -246,15 +142,6 @@ class AdManager {
     // Rewarded Popup
     showRewardedPopup() {
         return new Promise((resolve, reject) => {
-            // In development, show mock ad
-            if (isDevelopment) {
-                console.log('Development: Would show rewarded popup now');
-                this.showMockAd('rewardedPopup');
-                this.rewardUser();
-                resolve(true);
-                return;
-            }
-            
             try {
                 show_9803188('pop').then(() => {
                     console.log('Rewarded popup completed');
@@ -282,14 +169,10 @@ class AdManager {
         // Example: Give user premium content access
         if (window.currentUser) {
             // Update user state or give rewards
-            if (window.tg && window.tg.showPopup) {
-                window.tg.showPopup({
-                    title: 'Reward Unlocked!',
-                    message: 'Thank you for watching the ad. You have earned a reward!'
-                });
-            } else {
-                alert('Reward Unlocked! Thank you for watching the ad.');
-            }
+            window.tg.showPopup({
+                title: 'Reward Unlocked!',
+                message: 'Thank you for watching the ad. You have earned a reward!'
+            });
         }
     }
 
