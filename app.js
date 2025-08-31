@@ -162,22 +162,14 @@ async function loadPosts() {
 function showPosts() {
     const pageContent = document.getElementById('page-content');
     
-    // const menuHtml = `
-    //     <div class="menu">
-    //         <button class="menu-btn active" onclick="showPosts()">For You</button>
-    //         <button class="menu-btn" onclick="showTrending()">Trending</button>
-    //         <button class="menu-btn" onclick="showFollowing()">Following</button>
-    //     </div>
-    // `;
-    // In your showPosts function, update the menu HTML:
-const menuHtml = `
-    <div class="menu">
-        <button class="menu-btn active" onclick="showPosts()">For You</button>
-        <button class="menu-btn" onclick="showTrending()">Trending</button>
-        <button class="menu-btn" onclick="showFollowing()">Following</button>
-        <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
-    </div>
-`;
+    const menuHtml = `
+        <div class="menu">
+            <button class="menu-btn active" onclick="showPosts()">For You</button>
+            <button class="menu-btn" onclick="showTrending()">Trending</button>
+            <button class="menu-btn" onclick="showFollowing()">Following</button>
+            <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
+        </div>
+    `;
     
     let postsHtml = '<div class="feed">';
     
@@ -236,7 +228,7 @@ function showEmptyState() {
         <div class="empty-state">
             <h3>No posts yet</h3>
             <p>Be the first to create a post on TeleBlog!</p>
-            <button class="btn" onclick="tg.showAlert('Post creation will be available soon!')">Create First Post</button>
+            <button class="btn" onclick="showPostEditor()">Create First Post</button>
         </div>
     `;
 }
@@ -327,6 +319,7 @@ function showTrending() {
                 <button class="menu-btn" onclick="showPosts()">For You</button>
                 <button class="menu-btn active" onclick="showTrending()">Trending</button>
                 <button class="menu-btn" onclick="showFollowing()">Following</button>
+                <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
             </div>
             <div class="loading">
                 <p>Trending content will be displayed here.</p>
@@ -347,6 +340,7 @@ function showFollowing() {
                 <button class="menu-btn" onclick="showPosts()">For You</button>
                 <button class="menu-btn" onclick="showTrending()">Trending</button>
                 <button class="menu-btn active" onclick="showFollowing()">Following</button>
+                <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
             </div>
             <div class="loading">
                 <p>Content from accounts you follow will be displayed here.</p>
@@ -356,7 +350,7 @@ function showFollowing() {
     }, 1000);
 }
 
-// Add post creation function
+// Show post editor interface
 function showPostEditor() {
     const pageContent = document.getElementById('page-content');
     pageContent.innerHTML = `
@@ -373,25 +367,44 @@ function showPostEditor() {
     `;
 }
 
-// Add to your menu
-function addEditorButton() {
-    const menu = document.querySelector('.menu');
-    if (menu) {
-        menu.innerHTML += `<button class="menu-btn" onclick="showPostEditor()">Create Post</button>`;
-    }
-}
-
+// Save post to Supabase database
 async function savePost() {
     const title = document.getElementById('post-title').value;
     const content = document.getElementById('post-content').value;
     const tags = document.getElementById('post-tags').value.split(',').map(tag => tag.trim());
     
     if (!title || !content) {
-        alert('Please add a title and content');
+        if (window.tg && window.tg.showPopup) {
+            window.tg.showPopup({
+                title: 'Missing Information',
+                message: 'Please add a title and content to your post.'
+            });
+        } else {
+            alert('Please add a title and content');
+        }
         return;
     }
     
     try {
+        // Get the Supabase client
+        const supabase = window.SupabaseClient.getClient();
+        if (!supabase) {
+            throw new Error('Database connection not available');
+        }
+        
+        // Get current user's ID from Telegram data
+        const telegramUser = tg.initDataUnsafe.user;
+        if (!telegramUser || !telegramUser.id) {
+            throw new Error('User not authenticated properly');
+        }
+        
+        // First get or create the user in database
+        const user = await window.SupabaseClient.createUser(telegramUser);
+        if (!user || !user.id) {
+            throw new Error('Could not retrieve user information');
+        }
+        
+        // Insert the post
         const { data, error } = await supabase
             .from('posts')
             .insert({
@@ -399,28 +412,123 @@ async function savePost() {
                 content: content,
                 excerpt: content.substring(0, 150) + '...',
                 tags: tags,
-                user_id: currentUser.id,
+                user_id: user.id, // Use the user ID from database
                 is_published: true,
                 published_at: new Date().toISOString()
-            });
+            })
+            .select();
             
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+        }
         
-        alert('Post published successfully!');
-        loadPosts(); // Reload the posts feed
+        // Success message
+        if (window.tg && window.tg.showPopup) {
+            window.tg.showPopup({
+                title: 'Success!',
+                message: 'Your post has been published successfully.'
+            });
+        } else {
+            alert('Post published successfully!');
+        }
+        
+        // Reload the posts feed
+        loadPosts();
         
     } catch (error) {
         console.error('Error saving post:', error);
-        alert('Error publishing post. Please try again.');
+        
+        // Better error message
+        if (window.tg && window.tg.showPopup) {
+            window.tg.showPopup({
+                title: 'Publishing Error',
+                message: 'Could not publish post. Please check your connection and try again.'
+            });
+        } else {
+            alert('Error publishing post. Please try again.');
+        }
     }
 }
 
+// Save as draft function
 async function saveDraft() {
-    // Similar to savePost but with is_published: false
+    const title = document.getElementById('post-title').value;
+    const content = document.getElementById('post-content').value;
+    const tags = document.getElementById('post-tags').value.split(',').map(tag => tag.trim());
+    
+    try {
+        const supabase = window.SupabaseClient.getClient();
+        const telegramUser = tg.initDataUnsafe.user;
+        const user = await window.SupabaseClient.createUser(telegramUser);
+        
+        const { data, error } = await supabase
+            .from('posts')
+            .insert({
+                title: title,
+                content: content,
+                excerpt: content.substring(0, 150) + '...',
+                tags: tags,
+                user_id: user.id,
+                is_published: false, // Save as draft
+                created_at: new Date().toISOString()
+            })
+            .select();
+            
+        if (error) throw error;
+        
+        if (window.tg && window.tg.showPopup) {
+            window.tg.showPopup({
+                title: 'Draft Saved',
+                message: 'Your post has been saved as a draft.'
+            });
+        } else {
+            alert('Draft saved successfully!');
+        }
+        
+    } catch (error) {
+        console.error('Error saving draft:', error);
+        if (window.tg && window.tg.showPopup) {
+            window.tg.showPopup({
+                title: 'Error',
+                message: 'Could not save draft. Please try again.'
+            });
+        } else {
+            alert('Error saving draft.');
+        }
+    }
+}
+
+// Debug function to test database connection
+async function debugDatabase() {
+    try {
+        console.log("Testing database connection...");
+        
+        const supabase = window.SupabaseClient.getClient();
+        const telegramUser = tg.initDataUnsafe.user;
+        const user = await window.SupabaseClient.createUser(telegramUser);
+        
+        console.log("User:", user);
+        
+        // Test simple select query
+        const { data: testData, error: testError } = await supabase
+            .from('posts')
+            .select('id')
+            .limit(1);
+            
+        console.log("Test query result:", testData, testError);
+        
+    } catch (error) {
+        console.error("Debug error:", error);
+    }
 }
 
 // Make functions available globally
 window.showTrending = showTrending;
 window.showFollowing = showFollowing;
 window.showPosts = showPosts;
+window.showPostEditor = showPostEditor;
+window.savePost = savePost;
+window.saveDraft = saveDraft;
 window.simulateTelegramUser = simulateTelegramUser;
+window.debugDatabase = debugDatabase;
