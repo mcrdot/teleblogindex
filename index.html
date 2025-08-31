@@ -232,6 +232,42 @@
                 justify-content: center;
             }
         }
+        
+        /* Style for Post Creation */
+        .editor-container {
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.editor-input, .editor-textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.editor-textarea {
+    min-height: 200px;
+    resize: vertical;
+}
+
+.editor-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-primary {
+    background-color: var(--accent-blue);
+}
+
+.btn-secondary {
+    background-color: var(--bg-tertiary);
+}
     </style>
 </head>
 <body>

@@ -162,13 +162,22 @@ async function loadPosts() {
 function showPosts() {
     const pageContent = document.getElementById('page-content');
     
-    const menuHtml = `
-        <div class="menu">
-            <button class="menu-btn active" onclick="showPosts()">For You</button>
-            <button class="menu-btn" onclick="showTrending()">Trending</button>
-            <button class="menu-btn" onclick="showFollowing()">Following</button>
-        </div>
-    `;
+    // const menuHtml = `
+    //     <div class="menu">
+    //         <button class="menu-btn active" onclick="showPosts()">For You</button>
+    //         <button class="menu-btn" onclick="showTrending()">Trending</button>
+    //         <button class="menu-btn" onclick="showFollowing()">Following</button>
+    //     </div>
+    // `;
+    // In your showPosts function, update the menu HTML:
+const menuHtml = `
+    <div class="menu">
+        <button class="menu-btn active" onclick="showPosts()">For You</button>
+        <button class="menu-btn" onclick="showTrending()">Trending</button>
+        <button class="menu-btn" onclick="showFollowing()">Following</button>
+        <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
+    </div>
+`;
     
     let postsHtml = '<div class="feed">';
     
@@ -345,6 +354,69 @@ function showFollowing() {
             </div>
         `;
     }, 1000);
+}
+
+// Add post creation function
+function showPostEditor() {
+    const pageContent = document.getElementById('page-content');
+    pageContent.innerHTML = `
+        <div class="editor-container">
+            <h2>Create New Post</h2>
+            <input type="text" id="post-title" placeholder="Post Title" class="editor-input">
+            <textarea id="post-content" placeholder="Write your content here..." class="editor-textarea"></textarea>
+            <input type="text" id="post-tags" placeholder="Tags (comma separated)" class="editor-input">
+            <div class="editor-actions">
+                <button class="btn btn-primary" onclick="savePost()">Publish Post</button>
+                <button class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+            </div>
+        </div>
+    `;
+}
+
+// Add to your menu
+function addEditorButton() {
+    const menu = document.querySelector('.menu');
+    if (menu) {
+        menu.innerHTML += `<button class="menu-btn" onclick="showPostEditor()">Create Post</button>`;
+    }
+}
+
+async function savePost() {
+    const title = document.getElementById('post-title').value;
+    const content = document.getElementById('post-content').value;
+    const tags = document.getElementById('post-tags').value.split(',').map(tag => tag.trim());
+    
+    if (!title || !content) {
+        alert('Please add a title and content');
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .insert({
+                title: title,
+                content: content,
+                excerpt: content.substring(0, 150) + '...',
+                tags: tags,
+                user_id: currentUser.id,
+                is_published: true,
+                published_at: new Date().toISOString()
+            });
+            
+        if (error) throw error;
+        
+        alert('Post published successfully!');
+        loadPosts(); // Reload the posts feed
+        
+    } catch (error) {
+        console.error('Error saving post:', error);
+        alert('Error publishing post. Please try again.');
+    }
+}
+
+async function saveDraft() {
+    // Similar to savePost but with is_published: false
 }
 
 // Make functions available globally
