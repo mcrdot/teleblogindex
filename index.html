@@ -6,224 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleBlog Free - Telegram Blogging Platform</title>
 
-   <!-- Include Supabase client -->
+    <!-- Monetag Ad Script -->
+    <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
+   
+    <!-- Include Supabase client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+      
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles/main.css">
+
     <!-- Configuration files -->
     <script src="config.js"></script>
     <script src="scripts/supabase-client.js"></script>
-
-
-    <style>
-        :root {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --bg-tertiary: #2d2d2d;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --accent-blue: #4a76d0;
-            --accent-green: #43a047;
-            --accent-purple: #7e57c2;
-            --border-color: #404040;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-        
-        #app {
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-        
-        header {
-            background-color: var(--bg-secondary);
-            padding: 15px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-blue);
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background-color: var(--accent-purple);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        main {
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-        
-        .login-prompt {
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .btn {
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        
-        .feed {
-            display: grid;
-            gap: 20px;
-        }
-        
-        .post-card {
-            background-color: var(--bg-secondary);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .post-image {
-            width: 100%;
-            height: 200px;
-            background-color: var(--bg-tertiary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-        }
-        
-        .post-content {
-            padding: 20px;
-        }
-        
-        .post-title {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: var(--text-primary);
-        }
-        
-        .post-excerpt {
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-        }
-        
-        .post-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .tag {
-            background-color: var(--bg-tertiary);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-        }
-        
-        #ad-container {
-            margin: 30px 0;
-            padding: 20px;
-            background-color: var(--bg-tertiary);
-            border-radius: 8px;
-            text-align: center;
-            min-height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border-color);
-            margin-top: 40px;
-        }
-        
-        .menu {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .menu-btn {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .menu-btn.active {
-            background-color: var(--accent-blue);
-        }
-        
-        .dev-warning {
-            background-color: #ff9800;
-            color: black;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        
-        @media (max-width: 600px) {
-            main {
-                padding: 15px;
-            }
-            
-            .post-image {
-                height: 150px;
-            }
-            
-            .menu {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="dev-warning">
@@ -257,6 +51,9 @@
         </footer>
     </div>
     
+
+    <!-- Other scripts -->
+    <script src="scripts/ads-manager.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
