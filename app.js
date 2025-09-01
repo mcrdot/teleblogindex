@@ -87,7 +87,7 @@ function navigateTo(view, data = null) {
     
     switch(view) {
         case 'feed':
-            showPosts();
+            loadPosts(); // FIX: Call loadPosts which will then call showPosts
             break;
         case 'editor':
             showPostEditor();
@@ -102,7 +102,7 @@ function navigateTo(view, data = null) {
             showProfile();
             break;
         default:
-            showPosts();
+            loadPosts();
     }
 }
 
@@ -145,7 +145,7 @@ async function authenticateUser(telegramUser) {
         if (user) {
             currentUser = user;
             updateUserInfo();
-            navigateTo('feed');
+            navigateTo('feed'); // FIX: Use navigateTo instead of direct loadPosts
         } else {
             showLogin();
             showNotification("Failed to authenticate. Please try again.", 'error');
@@ -178,9 +178,10 @@ async function loadPosts() {
     try {
         // Use the helper to get posts
         posts = await window.SupabaseClient.getPublishedPosts();
+        console.log("Posts loaded from Supabase:", posts); // DEBUG
         
         if (posts && posts.length > 0) {
-            navigateTo('feed');
+            showPosts(); // FIX: Call showPosts after loading
         } else {
             // Show empty state if no posts
             showEmptyState();
@@ -188,6 +189,7 @@ async function loadPosts() {
     } catch (error) {
         console.error("Error loading posts:", error);
         updateUI('error', 'Failed to load posts. Please try again.');
+        showNotification('Failed to load posts. Please check your connection.', 'error');
     }
 }
 
@@ -199,32 +201,41 @@ function showPosts() {
     
     let postsHtml = '<div class="feed">';
     
-    posts.forEach(post => {
-        const authorName = post.user ? 
-            `${post.user.first_name || ''} ${post.user.last_name || ''}`.trim() : 
-            (post.author || 'Unknown Author');
-            
-        postsHtml += `
-            <div class="post-card">
-                ${post.image ? '<div class="post-image">Post Image</div>' : ''}
-                <div class="post-content">
-                    <h3 class="post-title">${post.title}</h3>
-                    <p class="post-excerpt">${post.excerpt || 'No excerpt available'}</p>
-                    <div class="post-meta">
-                        <div>
-                            <span>By ${authorName}</span>
-                            <span> • ${formatDate(post.published_at || post.date)}</span>
-                        </div>
-                        <div>
-                            ${post.tags && post.tags.length > 0 ? 
-                                post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('') : 
-                                '<span class="tag">#general</span>'}
+    if (posts && posts.length > 0) {
+        posts.forEach(post => {
+            const authorName = post.user ? 
+                `${post.user.first_name || ''} ${post.user.last_name || ''}`.trim() : 
+                (post.author || 'Unknown Author');
+                
+            postsHtml += `
+                <div class="post-card">
+                    ${post.image ? '<div class="post-image">Post Image</div>' : ''}
+                    <div class="post-content">
+                        <h3 class="post-title">${post.title}</h3>
+                        <p class="post-excerpt">${post.excerpt || 'No excerpt available'}</p>
+                        <div class="post-meta">
+                            <div>
+                                <span>By ${authorName}</span>
+                                <span> • ${formatDate(post.published_at || post.created_at)}</span>
+                            </div>
+                            <div>
+                                ${post.tags && post.tags.length > 0 ? 
+                                    post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('') : 
+                                    '<span class="tag">#general</span>'}
+                            </div>
                         </div>
                     </div>
                 </div>
+            `;
+        });
+    } else {
+        postsHtml += `
+            <div class="empty-state">
+                <h3>No posts found</h3>
+                <p>Be the first to create a post!</p>
             </div>
         `;
-    });
+    }
     
     postsHtml += '</div>';
     pageContent.innerHTML = menuHtml + postsHtml;
@@ -512,7 +523,9 @@ async function savePost() {
         
         clearDraft();
         showNotification('Post published successfully!', 'success');
-        navigateTo('feed');
+        
+        // Reload posts to include the new one
+        await loadPosts();
         
     } catch (error) {
         console.error('Error saving post:', error);
@@ -592,13 +605,16 @@ async function debugDatabase() {
         // Test simple select query
         const { data: testData, error: testError } = await supabase
             .from('posts')
-            .select('id')
-            .limit(1);
+            .select('*')
+            .limit(5);
             
         console.log("Test query result:", testData, testError);
         
+        return testData;
+        
     } catch (error) {
         console.error("Debug error:", error);
+        return null;
     }
 }
 
@@ -614,3 +630,4 @@ window.savePost = savePost;
 window.saveDraft = saveDraft;
 window.simulateTelegramUser = simulateTelegramUser;
 window.debugDatabase = debugDatabase;
+window.loadPosts = loadPosts; // FIX: Expose loadPosts for debugging
