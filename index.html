@@ -235,39 +235,176 @@
         
         /* Style for Post Creation */
         .editor-container {
-    background-color: var(--bg-secondary);
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
+        background-color: var(--bg-secondary);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        }   
 
-.editor-input, .editor-textarea {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-}
+        .editor-input, .editor-textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
 
-.editor-textarea {
-    min-height: 200px;
-    resize: vertical;
-}
+        .editor-textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
 
-.editor-actions {
-    display: flex;
-    gap: 10px;
-}
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
 
-.btn-primary {
-    background-color: var(--accent-blue);
-}
+        .btn-primary {
+            background-color: var(--accent-blue);
+        }
 
-.btn-secondary {
-    background-color: var(--bg-tertiary);
-}
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* ... your existing styles ... */
+    
+    /* Enhanced navigation styles */
+    .editor-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 15px;
+    }
+
+    .btn-back {
+        background: none;
+        border: none;
+        color: var(--accent-blue);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .btn-back:hover {
+        opacity: 0.8;
+    }
+
+    /* Notification system */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+    }
+
+    .notification-success {
+        background-color: var(--accent-green);
+    }
+
+    .notification-error {
+        background-color: #f44336;
+    }
+
+    .notification-loading {
+        background-color: var(--accent-blue);
+    }
+
+    .notification-info {
+        background-color: var(--bg-tertiary);
+    }
+
+    .notification button {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0;
+        margin-left: 10px;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Enhanced menu with active states */
+    .menu {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .menu-btn {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .menu-btn:hover {
+        background-color: var(--accent-blue);
+        transform: translateY(-2px);
+    }
+
+    .menu-btn.active {
+        background-color: var(--accent-blue);
+        font-weight: bold;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 600px) {
+        .menu {
+            justify-content: center;
+        }
+        
+        .menu-btn {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .editor-actions {
+            flex-direction: column;
+        }
+        
+        .editor-actions .btn {
+            width: 100%;
+        }
+        
+        .editor-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .btn-back {
+            align-self: flex-start;
+        }
+    }
+        
     </style>
 </head>
 <body>

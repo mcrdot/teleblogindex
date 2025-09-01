@@ -5,6 +5,8 @@
 let tg;
 let currentUser = null;
 let posts = [];
+let currentView = 'feed';
+let viewHistory = [];
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     checkAuth();
     initAds();
+    setupEditorLeaveConfirmation();
+    restoreDraftContent();
 });
 
 // Initialize Telegram Web App with automatic environment detection
@@ -76,6 +80,43 @@ function createMockTelegramWebApp() {
     };
 }
 
+// Enhanced navigation system
+function navigateTo(view, data = null) {
+    viewHistory.push({ view: currentView, data: data });
+    currentView = view;
+    
+    switch(view) {
+        case 'feed':
+            showPosts();
+            break;
+        case 'editor':
+            showPostEditor();
+            break;
+        case 'trending':
+            showTrending();
+            break;
+        case 'following':
+            showFollowing();
+            break;
+        case 'profile':
+            showProfile();
+            break;
+        default:
+            showPosts();
+    }
+}
+
+// Go back to previous view
+function goBack() {
+    if (viewHistory.length > 0) {
+        const previous = viewHistory.pop();
+        currentView = previous.view;
+        navigateTo(previous.view, previous.data);
+    } else {
+        navigateTo('feed');
+    }
+}
+
 // Check authentication status
 function checkAuth() {
     updateUI('loading', 'Checking authentication...');
@@ -104,23 +145,15 @@ async function authenticateUser(telegramUser) {
         if (user) {
             currentUser = user;
             updateUserInfo();
-            loadPosts();
+            navigateTo('feed');
         } else {
             showLogin();
-            if (tg.showAlert) {
-                tg.showAlert("Failed to authenticate. Please try again.");
-            } else {
-                alert("Failed to authenticate. Please try again.");
-            }
+            showNotification("Failed to authenticate. Please try again.", 'error');
         }
     } catch (error) {
         console.error("Authentication error:", error);
         showLogin();
-        if (tg.showAlert) {
-            tg.showAlert("Authentication error. Please try again.");
-        } else {
-            alert("Authentication error. Please try again.");
-        }
+        showNotification("Authentication error. Please try again.", 'error');
     }
 }
 
@@ -147,7 +180,7 @@ async function loadPosts() {
         posts = await window.SupabaseClient.getPublishedPosts();
         
         if (posts && posts.length > 0) {
-            showPosts();
+            navigateTo('feed');
         } else {
             // Show empty state if no posts
             showEmptyState();
@@ -162,14 +195,7 @@ async function loadPosts() {
 function showPosts() {
     const pageContent = document.getElementById('page-content');
     
-    const menuHtml = `
-        <div class="menu">
-            <button class="menu-btn active" onclick="showPosts()">For You</button>
-            <button class="menu-btn" onclick="showTrending()">Trending</button>
-            <button class="menu-btn" onclick="showFollowing()">Following</button>
-            <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
-        </div>
-    `;
+    const menuHtml = generateMenu();
     
     let postsHtml = '<div class="feed">';
     
@@ -204,6 +230,26 @@ function showPosts() {
     pageContent.innerHTML = menuHtml + postsHtml;
 }
 
+// Enhanced menu generation
+function generateMenu() {
+    return `
+        <div class="menu">
+            <button class="menu-btn ${currentView === 'feed' ? 'active' : ''}" onclick="navigateTo('feed')">
+                📝 For You
+            </button>
+            <button class="menu-btn ${currentView === 'trending' ? 'active' : ''}" onclick="navigateTo('trending')">
+                🔥 Trending
+            </button>
+            <button class="menu-btn ${currentView === 'following' ? 'active' : ''}" onclick="navigateTo('following')">
+                👥 Following
+            </button>
+            <button class="menu-btn ${currentView === 'editor' ? 'active' : ''}" onclick="navigateTo('editor')">
+                ✍️ Create Post
+            </button>
+        </div>
+    `;
+}
+
 // Format date for display
 function formatDate(dateString) {
     if (!dateString) return 'Unknown date';
@@ -228,7 +274,7 @@ function showEmptyState() {
         <div class="empty-state">
             <h3>No posts yet</h3>
             <p>Be the first to create a post on TeleBlog!</p>
-            <button class="btn" onclick="showPostEditor()">Create First Post</button>
+            <button class="btn" onclick="navigateTo('editor')">Create First Post</button>
         </div>
     `;
 }
@@ -314,13 +360,7 @@ function showTrending() {
     
     setTimeout(() => {
         const pageContent = document.getElementById('page-content');
-        pageContent.innerHTML = `
-            <div class="menu">
-                <button class="menu-btn" onclick="showPosts()">For You</button>
-                <button class="menu-btn active" onclick="showTrending()">Trending</button>
-                <button class="menu-btn" onclick="showFollowing()">Following</button>
-                <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
-            </div>
+        pageContent.innerHTML = generateMenu() + `
             <div class="loading">
                 <p>Trending content will be displayed here.</p>
                 <p>This feature requires backend implementation.</p>
@@ -335,13 +375,7 @@ function showFollowing() {
     
     setTimeout(() => {
         const pageContent = document.getElementById('page-content');
-        pageContent.innerHTML = `
-            <div class="menu">
-                <button class="menu-btn" onclick="showPosts()">For You</button>
-                <button class="menu-btn" onclick="showTrending()">Trending</button>
-                <button class="menu-btn active" onclick="showFollowing()">Following</button>
-                <button class="menu-btn" onclick="showPostEditor()">Create Post</button>
-            </div>
+        pageContent.innerHTML = generateMenu() + `
             <div class="loading">
                 <p>Content from accounts you follow will be displayed here.</p>
                 <p>This feature requires backend implementation.</p>
@@ -350,61 +384,117 @@ function showFollowing() {
     }, 1000);
 }
 
-// Show post editor interface
-function showPostEditor() {
+// Show profile view (placeholder)
+function showProfile() {
     const pageContent = document.getElementById('page-content');
-    pageContent.innerHTML = `
-        <div class="editor-container">
-            <h2>Create New Post</h2>
-            <input type="text" id="post-title" placeholder="Post Title" class="editor-input">
-            <textarea id="post-content" placeholder="Write your content here..." class="editor-textarea"></textarea>
-            <input type="text" id="post-tags" placeholder="Tags (comma separated)" class="editor-input">
-            <div class="editor-actions">
-                <button class="btn btn-primary" onclick="savePost()">Publish Post</button>
-                <button class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
-            </div>
+    pageContent.innerHTML = generateMenu() + `
+        <div class="loading">
+            <p>User profile will be displayed here.</p>
+            <p>This feature requires backend implementation.</p>
         </div>
     `;
 }
 
-// Save post to Supabase database
+// Enhanced post editor interface with navigation
+function showPostEditor() {
+    const pageContent = document.getElementById('page-content');
+    pageContent.innerHTML = `
+        <div class="editor-container">
+            <div class="editor-header">
+                <button class="btn-back" onclick="goBack()">← Back</button>
+                <h2>Create New Post</h2>
+            </div>
+            <input type="text" id="post-title" placeholder="Post Title" class="editor-input">
+            <textarea id="post-content" placeholder="Write your content here..." class="editor-textarea"></textarea>
+            <input type="text" id="post-tags" placeholder="Tags (comma separated)" class="editor-input">
+            <div class="editor-actions">
+                <button class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+                <button class="btn btn-primary" onclick="savePost()">Publish Post</button>
+            </div>
+        </div>
+    `;
+    
+    // Store current content in case user navigates away accidentally
+    storeDraftContent();
+}
+
+// Store draft content temporarily
+function storeDraftContent() {
+    const title = document.getElementById('post-title')?.value || '';
+    const content = document.getElementById('post-content')?.value || '';
+    const tags = document.getElementById('post-tags')?.value || '';
+    
+    sessionStorage.setItem('postDraft', JSON.stringify({
+        title,
+        content,
+        tags,
+        timestamp: new Date().getTime()
+    }));
+}
+
+// Restore draft content if available
+function restoreDraftContent() {
+    const draft = sessionStorage.getItem('postDraft');
+    if (draft) {
+        const { title, content, tags, timestamp } = JSON.parse(draft);
+        
+        // Only restore if draft is recent (last 30 minutes)
+        if (new Date().getTime() - timestamp < 30 * 60 * 1000) {
+            if (document.getElementById('post-title')) {
+                document.getElementById('post-title').value = title;
+            }
+            if (document.getElementById('post-content')) {
+                document.getElementById('post-content').value = content;
+            }
+            if (document.getElementById('post-tags')) {
+                document.getElementById('post-tags').value = tags;
+            }
+        }
+    }
+}
+
+// Clear draft content
+function clearDraft() {
+    sessionStorage.removeItem('postDraft');
+    if (currentView === 'editor') {
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-content').value = '';
+        document.getElementById('post-tags').value = '';
+    }
+}
+
+// Confirm before leaving editor
+function setupEditorLeaveConfirmation() {
+    window.addEventListener('beforeunload', function (e) {
+        const title = document.getElementById('post-title')?.value || '';
+        const content = document.getElementById('post-content')?.value || '';
+        
+        if (currentView === 'editor' && (title.trim() || content.trim())) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+}
+
+// Enhanced save post function with notifications
 async function savePost() {
     const title = document.getElementById('post-title').value;
     const content = document.getElementById('post-content').value;
     const tags = document.getElementById('post-tags').value.split(',').map(tag => tag.trim());
     
     if (!title || !content) {
-        if (window.tg && window.tg.showPopup) {
-            window.tg.showPopup({
-                title: 'Missing Information',
-                message: 'Please add a title and content to your post.'
-            });
-        } else {
-            alert('Please add a title and content');
-        }
+        showNotification('Please add a title and content to your post.', 'error');
         return;
     }
     
+    showNotification('Publishing your post...', 'loading');
+    
     try {
-        // Get the Supabase client
         const supabase = window.SupabaseClient.getClient();
-        if (!supabase) {
-            throw new Error('Database connection not available');
-        }
-        
-        // Get current user's ID from Telegram data
         const telegramUser = tg.initDataUnsafe.user;
-        if (!telegramUser || !telegramUser.id) {
-            throw new Error('User not authenticated properly');
-        }
-        
-        // First get or create the user in database
         const user = await window.SupabaseClient.createUser(telegramUser);
-        if (!user || !user.id) {
-            throw new Error('Could not retrieve user information');
-        }
         
-        // Insert the post
         const { data, error } = await supabase
             .from('posts')
             .insert({
@@ -412,46 +502,25 @@ async function savePost() {
                 content: content,
                 excerpt: content.substring(0, 150) + '...',
                 tags: tags,
-                user_id: user.id, // Use the user ID from database
+                user_id: user.id,
                 is_published: true,
                 published_at: new Date().toISOString()
             })
             .select();
             
-        if (error) {
-            console.error('Supabase error:', error);
-            throw error;
-        }
+        if (error) throw error;
         
-        // Success message
-        if (window.tg && window.tg.showPopup) {
-            window.tg.showPopup({
-                title: 'Success!',
-                message: 'Your post has been published successfully.'
-            });
-        } else {
-            alert('Post published successfully!');
-        }
-        
-        // Reload the posts feed
-        loadPosts();
+        clearDraft();
+        showNotification('Post published successfully!', 'success');
+        navigateTo('feed');
         
     } catch (error) {
         console.error('Error saving post:', error);
-        
-        // Better error message
-        if (window.tg && window.tg.showPopup) {
-            window.tg.showPopup({
-                title: 'Publishing Error',
-                message: 'Could not publish post. Please check your connection and try again.'
-            });
-        } else {
-            alert('Error publishing post. Please try again.');
-        }
+        showNotification('Could not publish post. Please try again.', 'error');
     }
 }
 
-// Save as draft function
+// Enhanced save as draft function
 async function saveDraft() {
     const title = document.getElementById('post-title').value;
     const content = document.getElementById('post-content').value;
@@ -477,26 +546,36 @@ async function saveDraft() {
             
         if (error) throw error;
         
-        if (window.tg && window.tg.showPopup) {
-            window.tg.showPopup({
-                title: 'Draft Saved',
-                message: 'Your post has been saved as a draft.'
-            });
-        } else {
-            alert('Draft saved successfully!');
-        }
+        showNotification('Draft saved successfully!', 'success');
+        navigateTo('feed');
         
     } catch (error) {
         console.error('Error saving draft:', error);
-        if (window.tg && window.tg.showPopup) {
-            window.tg.showPopup({
-                title: 'Error',
-                message: 'Could not save draft. Please try again.'
-            });
-        } else {
-            alert('Error saving draft.');
-        }
+        showNotification('Could not save draft. Please try again.', 'error');
     }
+}
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notif => notif.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
 }
 
 // Debug function to test database connection
@@ -524,10 +603,13 @@ async function debugDatabase() {
 }
 
 // Make functions available globally
+window.navigateTo = navigateTo;
+window.goBack = goBack;
 window.showTrending = showTrending;
 window.showFollowing = showFollowing;
 window.showPosts = showPosts;
 window.showPostEditor = showPostEditor;
+window.showProfile = showProfile;
 window.savePost = savePost;
 window.saveDraft = saveDraft;
 window.simulateTelegramUser = simulateTelegramUser;
