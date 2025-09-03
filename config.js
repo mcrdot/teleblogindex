@@ -26,7 +26,7 @@ window.AppConfig = {
     isProduction: IS_PRODUCTION,
     telegramWebAppUrl: TELEGRAM_WEBAPP_URL,
     bot: {
-        username: 'TeleBlogLiteBot', // Your bot username
+        username: 'TeleBlogOfficialBot', // Your bot username
         webAppUrl: 'https://mcrdot.github.io/teleblog-lite' // Your GitHub Pages URL
     }
 };
