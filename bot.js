@@ -1,12 +1,14 @@
 // bot.js - Telegram Bot Webhook Handler
-const TELEGRAM_BOT_TOKEN = '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE'; // Replace with your actual token
-const WEB_APP_URL = 'https://mcrdot.github.io/teleblog-lite/'; // Replace with your GitHub Pages URL
+const TELEGRAM_BOT_TOKEN = window.AppConfig?.bot?.token || '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE';
+const WEB_APP_URL = window.AppConfig?.bot?.webAppUrl || 'https://mcrdot.github.io/teleblog-lite';
 
 async function handleBotUpdate(update) {
     if (!update.message) return;
     
     const chatId = update.message.chat.id;
     const text = update.message.text || '';
+    
+    console.log("Bot received message:", text); // Debug log
     
     // Handle commands
     if (text.startsWith('/start')) {
@@ -31,7 +33,7 @@ async function sendStartMessage(chatId) {
     const keyboard = {
         inline_keyboard: [[
             {
-                text: "Open TeleBlog Lite",
+                text: "🚀 Open TeleBlog Lite",
                 web_app: { url: WEB_APP_URL }
             }
         ]]
@@ -87,7 +89,7 @@ async function sendLatestPosts(chatId) {
     const keyboard = {
         inline_keyboard: [[
             {
-                text: "Read Latest Posts",
+                text: "📖 Read Latest Posts",
                 web_app: { url: `${WEB_APP_URL}?ref=bot_posts` }
             }
         ]]
@@ -107,7 +109,7 @@ async function sendUnknownCommand(chatId) {
     const keyboard = {
         inline_keyboard: [[
             {
-                text: "Open App",
+                text: "📱 Open App",
                 web_app: { url: WEB_APP_URL }
             }
         ]]
@@ -138,16 +140,51 @@ async function sendTelegramMessage(chatId, text, replyMarkup = null) {
             body: JSON.stringify(payload)
         });
         
-        return await response.json();
+        const result = await response.json();
+        console.log("Message sent result:", result); // Debug log
+        return result;
     } catch (error) {
         console.error('Error sending message:', error);
         return null;
     }
 }
 
+// Test function to verify bot connection
+async function testBotConnection() {
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe`);
+        const result = await response.json();
+        console.log("Bot connection test:", result);
+        return result;
+    } catch (error) {
+        console.error("Bot connection test failed:", error);
+        return null;
+    }
+}
+
 // Make functions available for Cloudflare Worker
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { handleBotUpdate };
+    module.exports = { handleBotUpdate, testBotConnection };
 } else {
-    window.TelegramBot = { handleBotUpdate, sendTelegramMessage };
+    window.TelegramBot = { 
+        handleBotUpdate, 
+        sendTelegramMessage,
+        testBotConnection,
+        TELEGRAM_BOT_TOKEN,
+        WEB_APP_URL
+    };
+}
+
+// Auto-test if in browser
+if (typeof window !== 'undefined') {
+    setTimeout(() => {
+        console.log("Testing bot connection...");
+        testBotConnection().then(result => {
+            if (result && result.ok) {
+                console.log("✅ Bot is connected:", result.result.username);
+            } else {
+                console.log("❌ Bot connection failed");
+            }
+        });
+    }, 1000);
 }

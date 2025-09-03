@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Setup Webhook - TeleBlog</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .btn { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>TeleBlog Bot Webhook Setup</h1>
+    <p>Use this page to set up the webhook for your new bot.</p>
+    
+    <button class="btn" onclick="setWebhook()">Set Webhook</button>
+    <button class="btn" onclick="getWebhookInfo()">Check Webhook Status</button>
+    <button class="btn" onclick="testBot()">Test Bot Connection</button>
+    
+    <div id="result"></div>
+
+    <script>
+        const BOT_TOKEN = '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE';
+        const WEBHOOK_URL = 'https://teleblog-lite-bot.macrotiser-pk.workers.dev/webhook';
+
+        async function setWebhook() {
+            showResult('Setting webhook...', 'info');
+            
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${encodeURIComponent(WEBHOOK_URL)}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.ok) {
+                    showResult('✅ Webhook set successfully!', 'success');
+                } else {
+                    showResult(`❌ Failed to set webhook: ${result.description}`, 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                showResult(`❌ Error setting webhook: ${error.message}`, 'error');
+                return { error: error.message };
+            }
+        }
+
+        async function getWebhookInfo() {
+            showResult('Checking webhook info...', 'info');
+            
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.ok) {
+                    showResult(`
+                        <h3>Webhook Information:</h3>
+                        <p><strong>URL:</strong> ${result.result.url || 'Not set'}</p>
+                        <p><strong>Status:</strong> ${result.result.pending_update_count} pending updates</p>
+                        <p><strong>Last Error:</strong> ${result.result.last_error_message || 'None'}</p>
+                        <pre>${JSON.stringify(result.result, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`❌ Failed to get webhook info: ${result.description}`, 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                showResult(`❌ Error getting webhook info: ${error.message}`, 'error');
+                return { error: error.message };
+            }
+        }
+
+        async function testBot() {
+            showResult('Testing bot connection...', 'info');
+            
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/getMe`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.ok) {
+                    showResult(`
+                        <h3>✅ Bot Connection Successful!</h3>
+                        <p><strong>Bot Name:</strong> ${result.result.first_name}</p>
+                        <p><strong>Username:</strong> @${result.result.username}</p>
+                        <p><strong>ID:</strong> ${result.result.id}</p>
+                    `, 'success');
+                } else {
+                    showResult(`❌ Bot test failed: ${result.description}`, 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                showResult(`❌ Error testing bot: ${error.message}`, 'error');
+                return { error: error.message };
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        // Auto-test on load
+        setTimeout(testBot, 1000);
+    </script>
+</body>
+</html>
