@@ -1,6 +1,6 @@
 // bot.js - Telegram Bot Webhook Handler
-const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // Replace with your actual token
-const WEB_APP_URL = 'https://your-username.github.io/teleblog-lite'; // Replace with your GitHub Pages URL
+const TELEGRAM_BOT_TOKEN = '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE'; // Replace with your actual token
+const WEB_APP_URL = 'https://mcrdot.github.io/teleblog-lite/'; // Replace with your GitHub Pages URL
 
 async function handleBotUpdate(update) {
     if (!update.message) return;
