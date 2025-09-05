@@ -1,5 +1,5 @@
 // deploy-bot.js - Simple webhook setup
-const BOT_TOKEN = '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE';
+const BOT_TOKEN = '8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE';
 
 async function setWebhook() {
     // Replace with your actual worker URL after deployment

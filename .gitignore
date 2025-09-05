@@ -4,3 +4,10 @@ node_modules/
 .env.local
 .DS_Store
 *.log
+config.json
+config.production.json
+output.doc
+telegram-web-app.js
+package.json
+package-lock.json
+deploy-bot.js
