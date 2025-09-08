@@ -44,7 +44,7 @@ class AdManager {
         if (!document.getElementById('monetag-ad-container')) {
             const adContainer = document.createElement('div');
             adContainer.id = 'monetag-ad-container';
-            adContainer.style.cssText = 'width: 100%; min-height: 100px; margin: 20px 0; display: flex; align-items: center; justify-content: center; background: #1e1e1e; border-radius: 8px;';
+            adContainer.style.cssText = 'width: 100%; min-height: 120px; margin: 20px 0; display: flex; align-items: center; justify-content: center; background: #272727ff; border-radius: 0px;';
             document.body.appendChild(adContainer);
         }
     }

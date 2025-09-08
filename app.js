@@ -296,12 +296,12 @@ function showLogin() {
     
     pageContent.innerHTML = `
         <div class="login-prompt">
-            <h2>Welcome to TeleBlog</h2>
+            <h2>Welcome to TeleBlog Official</h2>
             <p>Please open this app through Telegram to start reading and creating blog posts.</p>
             <p>If you're seeing this message in Telegram, try refreshing the app.</p>
             <div class="dev-note">
                 <p><strong>Development Note:</strong> Since you're running this locally, we've simulated a user account for development purposes.</p>
-                <button class="btn" onclick="simulateTelegramUser()">Simulate Telegram User</button>
+                <button class="btn" onclick="simulateTelegramUser()">Simulate As A Telegram User</button>
             </div>
         </div>
     `;
@@ -615,6 +615,133 @@ async function debugDatabase() {
     } catch (error) {
         console.error("Debug error:", error);
         return null;
+    }
+}
+
+// Menu navigation functions
+function setActiveMenu(menuItem) {
+    // Remove active class from all menu items
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    // Add active class to clicked item
+    if (menuItem) {
+        menuItem.classList.add('active');
+    }
+}
+
+// Update navigateTo function to handle menu activation
+function navigateTo(view, data = null) {
+    viewHistory.push({ view: currentView, data: data });
+    currentView = view;
+    
+    // Update menu active state
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    switch(view) {
+        case 'feed':
+            document.querySelector('.menu-item:nth-child(1)').classList.add('active');
+            loadPosts();
+            break;
+        case 'editor':
+            // No direct menu item for editor
+            showPostEditor();
+            break;
+        case 'profile':
+            document.querySelector('.menu-item:nth-child(4)').classList.add('active');
+            showProfile();
+            break;
+        default:
+            loadPosts();
+    }
+}
+
+// Save function for the SAVE menu item
+function savePost() {
+    if (currentView === 'editor') {
+        // If we're in the editor, save the current post
+        const title = document.getElementById('post-title')?.value;
+        const content = document.getElementById('post-content')?.value;
+        
+        if (title && content) {
+            saveDraft();
+            showNotification('Post saved successfully!', 'success');
+        } else {
+            showNotification('Please add title and content before saving', 'error');
+        }
+    } else {
+        // If we're not in the editor, navigate to it
+        navigateTo('editor');
+    }
+}
+
+// Search function
+function openSearch() {
+    const pageContent = document.getElementById('page-content');
+    pageContent.innerHTML = `
+        <div class="editor-container">
+            <div class="editor-header">
+                <h2>Search Posts</h2>
+            </div>
+            <input type="text" id="search-input" placeholder="Search for posts..." class="editor-input">
+            <button class="btn btn-primary" onclick="performSearch()">Search</button>
+            <div id="search-results" style="margin-top: 20px;"></div>
+        </div>
+    `;
+}
+
+// Perform search function
+async function performSearch() {
+    const query = document.getElementById('search-input').value;
+    if (!query) {
+        showNotification('Please enter a search term', 'error');
+        return;
+    }
+    
+    showNotification('Searching...', 'loading');
+    
+    try {
+        // This would search in your Supabase database
+        const supabase = window.SupabaseClient.getClient();
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .ilike('title', `%${query}%`)
+            .eq('is_published', true);
+            
+        if (error) throw error;
+        
+        const resultsContainer = document.getElementById('search-results');
+        
+        if (data && data.length > 0) {
+            let resultsHtml = '<div class="feed">';
+            data.forEach(post => {
+                resultsHtml += `
+                    <div class="post-card">
+                        <div class="post-content">
+                            <h3 class="post-title">${post.title}</h3>
+                            <p class="post-excerpt">${post.excerpt || 'No excerpt available'}</p>
+                            <div class="post-meta">
+                                <div>
+                                    <span>By ${post.author || 'Unknown'}</span>
+                                    <span> • ${formatDate(post.published_at)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            resultsHtml += '</div>';
+            resultsContainer.innerHTML = resultsHtml;
+        } else {
+            resultsContainer.innerHTML = '<p>No results found</p>';
+        }
+        
+        showNotification('Search completed', 'success');
+    } catch (error) {
+        console.error('Search error:', error);
+        showNotification('Search failed. Please try again.', 'error');
     }
 }
 
