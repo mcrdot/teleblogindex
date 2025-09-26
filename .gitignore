@@ -11,3 +11,30 @@ telegram-web-app.js
 package.json
 package-lock.json
 deploy-bot.js
+/worker
+/supabase
+
+# Environment & secrets
+.env
+tokens.txt
+
+# Dependencies
+/node_modules
+
+# Build / cache
+dist/
+build/
+*.log
+
+# Backups / test files
+index0.html
+output.doc
+test.html
+test.js
+app-old.js
+tnc.css
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+

@@ -1,486 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TeleBlog Official - Telegram Blogging Platform</title>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TeleBlog Official - Telegram Blogging Platform</title>
 
-    <!-- Load Telegram script first -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
-    
+  <!-- Telegram script -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <!-- Monetag Ad Script -->
-    <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
-   
-    <!-- Include Supabase client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-      
-    <!-- Configuration files -->
-    <script src="config.js"></script>
-    <script src="scripts/supabase-client.js"></script>
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
 
-    <style>
-        :root {
-            --bg-primary: #3d3d3d;
-            --bg-secondary: #5c5c5c;
-            --bg-tertiary: #2d2d2d;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --accent-blue: #6d9eff;
-            --accent-green: #43a047;
-            --accent-purple: #f36e64;
-            --border-color: #404040;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-        
-        #app {
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-        
-        header {
-            background-color: var(--bg-secondary);
-            padding: 15px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-blue);
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background-color: var(--accent-purple);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        main {
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-        
-        .login-prompt {
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .btn {
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        
-        .feed {
-            display: grid;
-            gap: 20px;
-        }
-        
-        .post-card {
-            background-color: var(--bg-secondary);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .post-image {
-            width: 100%;
-            height: 200px;
-            background-color: var(--bg-tertiary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-        }
-        
-        .post-content {
-            padding: 20px;
-        }
-        
-        .post-title {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: var(--text-primary);
-        }
-        
-        .post-excerpt {
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-        }
-        
-        .post-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .tag {
-            background-color: var(--bg-tertiary);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-        }
-        
-        #ad-container {
-            margin: 30px 0;
-            padding: 20px;
-            background-color: var(--bg-tertiary);
-            border-radius: 8px;
-            text-align: center;
-            min-height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border-color);
-            margin-top: 40px;
-        }
-        
-        .menu {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .menu-btn {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .menu-btn.active {
-            background-color: var(--accent-blue);
-        }
-        
-        .dev-warning {
-            background-color: #fffb00;
-            color: black;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        
-        .empty-state, .error-state {
-            text-align: center;
-            padding: 40px;
-        }
-        
-        @media (max-width: 600px) {
-            main {
-                padding: 15px;
-            }
-            
-            .post-image {
-                height: 150px;
-            }
-            
-            .menu {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        }
-        
-        /* Style for Post Creation */
-        .editor-container {
-        background-color: var(--bg-secondary);
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        }   
+  <!-- Monetag Ad Script -->
+  <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
 
-        .editor-input, .editor-textarea {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        .editor-textarea {
-            min-height: 200px;
-            resize: vertical;
-        }
+  <!-- Config + Supabase -->
+  <script src="config.js"></script>
+  <script src="scripts/supabase-client.js"></script>
 
-        .editor-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-primary {
-            background-color: var(--accent-blue);
-        }
-
-        .btn-secondary {
-            background-color: var(--bg-tertiary);
-        }
-
-        /* Enhanced navigation styles */
-        .editor-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            gap: 15px;
-        }
-
-        .btn-back {
-            background: none;
-            border: none;
-            color: var(--accent-blue);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .btn-back:hover {
-            opacity: 0.8;
-        }
-
-        /* Notification system */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            max-width: 300px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification-success {
-            background-color: var(--accent-green);
-        }
-
-        .notification-error {
-            background-color: #f44336;
-        }
-
-        .notification-loading {
-            background-color: var(--accent-blue);
-        }
-
-        .notification-info {
-            background-color: var(--bg-tertiary);
-        }
-
-        .notification button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0;
-            margin-left: 10px;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Enhanced menu with active states */
-        .menu {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .menu-btn {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .menu-btn:hover {
-            background-color: var(--accent-blue);
-            transform: translateY(-2px);
-        }
-
-        .menu-btn.active {
-            background-color: var(--accent-blue);
-            font-weight: bold;
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 600px) {
-            .menu {
-                justify-content: center;
-            }
-            
-            .menu-btn {
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-            
-            .editor-actions {
-                flex-direction: column;
-            }
-            
-            .editor-actions .btn {
-                width: 100%;
-            }
-            
-            .editor-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .btn-back {
-                align-self: flex-start;
-            }
-        }
-            
-    </style>
+  <!-- Theme Styles -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="dev-warning">
-        Development Mode: Using local Telegram Web App JS
-    </div>
-    
-    <div id="app">
-        <header>
-            <div class="logo">TeleBlog Official</div>
-            <div class="user-info" id="user-info">
-                <div class="avatar">U</div>
-                <span>Loading...</span>
-            </div>
-        </header>
-        
-        <main>
-            <div id="page-content">
-                <div class="loading">
-                    <p>Initializing TeleBlog...</p>
-                </div>
-            </div>
-            
-            <div id="ad-container">
-                <p>Ad content will be displayed here</p>
-            </div>
-        </main>
-        
-        <footer>
-            <p>TeleBlog Official - Powered by Telegram Web App</p>
-            <p>Development Mode: initialized √ </p>
-            <p>Developed By: F.S.S.A @VT_Global </p>
-        </footer>
-    </div>
-    
-    <!-- Add a notification container -->
-    <div id="notification-container"></div>
+  <div class="dev-warning">
+    Development Mode: Using local Telegram Web App JS
+  </div>
 
-    <!-- Other scripts -->
-    <script src="scripts/ads-manager.js"></script>
-    <script src="app.js"></script>
-    
-    <!-- Add a script to handle Telegram Web App initialization -->
-    <script>
-        // Check if Telegram Web App is available
-        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-            console.log('Telegram Web App initialized successfully');
-            
-            // Expand the Web App to full height
-            Telegram.WebApp.expand();
-            
-            // Enable the confirmation dialog when closing the Web App
-            Telegram.WebApp.enableClosingConfirmation();
-            
-            // Set the background color to match your theme
-            Telegram.WebApp.setBackgroundColor('#121212');
-            
-            // Set the header color to match your theme
-            Telegram.WebApp.setHeaderColor('#1e1e1e');
-            
-            // You can now safely use Telegram.WebApp.initData and other properties
-            console.log('Init Data:', Telegram.WebApp.initData);
-        } else {
-            console.error('Telegram Web App is not available');
-            
-            // Show a user-friendly error message
-            document.getElementById('page-content').innerHTML = `
-                <div class="error-state">
-                    <h2>Telegram Not Detected</h2>
-                    <p>This application only works within the Telegram messenger.</p>
-                    <p>Please open this page in Telegram to continue.</p>
-                </div>
-            `;
-        }
-    </script>
+  <div id="app">
+    <header>
+      <div class="logo">TeleBlog Official</div>
+      <div class="user-info" id="user-info">
+        <div class="avatar">U</div>
+        <span>Loading...</span>
+      </div>
+      <!-- Theme Toggle Button -->
+      <button id="theme-toggle" class="btn">🌙</button>
+    </header>
+
+    <main>
+      <div id="page-content">
+        <div class="loading">
+          <p>Initializing TeleBlog...</p>
+        </div>
+      </div>
+
+      <div id="ad-container">
+        <p>Ad content will be displayed here</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>TeleBlog Official - Powered by Telegram Web App</p>
+      <p>Development Mode: initialized √ </p>
+      <p>Developed By: F.S.S.A @VT_Global </p>
+    </footer>
+  </div>
+
+  <div id="notification-container"></div>
+
+  <!-- Scripts -->
+  <script src="scripts/ads-manager.js"></script>
+  <script src="app.js"></script>
+  <script src="theme.js"></script>
+
+  <script>
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+      console.log('Telegram Web App initialized successfully');
+      Telegram.WebApp.expand();
+      Telegram.WebApp.enableClosingConfirmation();
+      Telegram.WebApp.setBackgroundColor('#121212');
+      Telegram.WebApp.setHeaderColor('#1e1e1e');
+      console.log('Init Data:', Telegram.WebApp.initData);
+    } else {
+      console.error('Telegram Web App is not available');
+      document.getElementById('page-content').innerHTML = `
+        <div class="error-state">
+          <h2>Telegram Not Detected</h2>
+          <p>This application only works within the Telegram messenger.</p>
+          <p>Please open this page in Telegram to continue.</p>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
