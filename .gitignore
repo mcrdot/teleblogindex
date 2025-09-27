@@ -8,8 +8,8 @@ node_modules/
 config.production.json
 output.doc
 telegram-web-app.js
-package.json
-package-lock.json
+#package.json
+#package-lock.json
 deploy-bot.js
 /worker
 /supabase
