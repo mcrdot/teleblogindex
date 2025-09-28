@@ -1,5 +1,5 @@
 // bot.js - Telegram Bot Webhook Handler
-const TELEGRAM_BOT_TOKEN = window.AppConfig?.bot?.token || '8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE';
+const TELEGRAM_BOT_TOKEN = window.AppConfig?.bot?.token || '8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE';
 const WEB_APP_URL = window.AppConfig?.bot?.webAppUrl || 'https://mcrdot.github.io/teleblog-lite';
 
 async function handleBotUpdate(update) {
