@@ -28,7 +28,7 @@ export default {
           }
           
           // Send response back to Telegram
-          await fetch(`https://api.telegram.org/bot8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE/sendMessage`, {
+          await fetch(`https://api.telegram.org/bot8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
