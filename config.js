@@ -21,7 +21,7 @@ document.head.appendChild(telegramScript);
 
 // NEW: Bot configuration with updated credentials
 const BOT_CONFIG = {
-    token: "8032387671:AAFqCA2lH9d_o_3I0kSXwhYkR7K4Y8kXKcE", // Your new bot token
+    token: "8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE", // Your new bot token
     username: "TeleBlogOfficialBot", // Your new bot username
     webAppUrl: "https://mcrdot.github.io/teleblog-lite", // Your GitHub Pages URL
     webhookUrl: "https://teleblog-lite-bot.macrotiser-pk.workers.dev/webhook" // Your Cloudflare Worker URL
