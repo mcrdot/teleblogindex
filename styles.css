@@ -109,7 +109,9 @@ main {
 
 .btn {
   background-color: var(--accent-blue);
+  /* background-color: #2d2d2d; */
   color: var(--bg-primary);
+  /* color: #cc5047); */
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
