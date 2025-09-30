@@ -1,4 +1,3 @@
-```javascript
 // scripts/supabase-client.js
 let supabaseClient;
 
@@ -197,4 +196,3 @@ window.SupabaseClient = {
     getPublishedPosts,
     getClient: () => supabaseClient,
 };
-```
