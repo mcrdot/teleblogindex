@@ -3,7 +3,6 @@ Volume serial number is 74A6-02F1
 G:.
 |   .env
 |   .gitignore
-|   app-old.js [not in use and replaced with app.js]
 |   app.js
 |   bot.js
 |   config.js
@@ -48,10 +47,7 @@ G:.
 |       auth.js [without and code and still not in use]
 |       post-editor.js [without and code and still not in use]
 |       supabase-client.js
-|       
-+---styles
-|       main.css [not in use with some css]
-|       
+|   
 +---supabase
 |   \---functions
 |       \---create-user

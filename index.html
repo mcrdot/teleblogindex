@@ -11,31 +11,14 @@
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
 
-  <!-- Monetag Ad Script -->
-  <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
-
   <!-- Supabase client (core library) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- ✅ Define AppConfig before anything uses it -->
-  <script>
-    window.AppConfig = {
-      supabase: {
-        url: "https://hudrcdftoqcwxskhuahg.supabase.co",
-        anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCI6MTc1NjA5MzA2NywiZXhwIjoyMDcxNjY5MDY3fQ.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo"
-      }
-    };
-  </script>
-
-  <!-- Config + Supabase wrapper -->
-  <script src="config.js"></script>
-  <script src="scripts/supabase-client.js"></script>
 
   <!-- Theme Styles -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="dev-warning">
+  <div class="dev-warning" id="dev-warning" style="display: none;">
     Development Mode: Using local Telegram Web App JS
   </div>
 
@@ -64,37 +47,52 @@
 
     <footer>
       <p>TeleBlog Official - Powered by Telegram Web App</p>
-      <p>Development Mode: initialized √ </p>
-      <p>Developed By: F.S.S.A @VT_Global </p>
+      <p id="environment-info">Environment: Detecting...</p>
+      <p>Developed By: F.S.S.A @VT_Global</p>
     </footer>
   </div>
 
   <div id="notification-container"></div>
 
-  <!-- Scripts -->
-  <script src="scripts/ads-manager.js"></script>
+  <!-- Scripts in CORRECT ORDER -->
+  <script src="config.js"></script>
+  <script src="scripts/supabase-client.js"></script>
   <script src="app.js"></script>
   <script src="theme.js"></script>
 
-  <!-- Telegram initialization -->
+  <!-- Enhanced initialization -->
   <script>
-    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-      console.log('Telegram Web App initialized successfully');
-      Telegram.WebApp.expand();
-      Telegram.WebApp.enableClosingConfirmation();
-      Telegram.WebApp.setBackgroundColor('#121212');
-      Telegram.WebApp.setHeaderColor('#1e1e1e');
-      console.log('Init Data:', Telegram.WebApp.initData);
-    } else {
-      console.error('Telegram Web App is not available');
-      document.getElementById('page-content').innerHTML = `
-        <div class="error-state">
-          <h2>Telegram Not Detected</h2>
-          <p>This application only works within the Telegram messenger.</p>
-          <p>Please open this page in Telegram to continue.</p>
-        </div>
-      `;
+    // Enhanced environment detection that works with VPN
+    function detectEnvironment() {
+      const isLocal = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.protocol === 'file:';
+      
+      const isTelegram = typeof Telegram !== 'undefined' && Telegram.WebApp;
+      
+      console.log('Environment Detection:', {
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        isLocal: isLocal,
+        isTelegram: isTelegram,
+        telegramAvailable: !!Telegram?.WebApp
+      });
+      
+      return { isLocal, isTelegram };
     }
+
+    // Update environment info
+    const env = detectEnvironment();
+    const envInfo = document.getElementById('environment-info');
+    
+    if (env.isLocal) {
+      document.getElementById('dev-warning').style.display = 'block';
+      envInfo.textContent = 'Environment: Development (Local)';
+    } else {
+      envInfo.textContent = 'Environment: Production (Telegram)';
+    }
+
+    console.log('✅ All scripts loaded successfully');
   </script>
 </body>
 </html>

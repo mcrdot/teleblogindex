@@ -1,44 +1,35 @@
-// config.js - Enhanced with Supabase configuration
+// config.js - Enhanced with proper Supabase configuration
 const SUPABASE_CONFIG = {
     url: "https://hudrcdftoqcwxskhuahg.supabase.co",
-    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCI6MTc1NjA5MzA2NywiZXhwIjoyMDcxNjY5MDY3fQ.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo"
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo"
 };
 
 // Environment detection
 const IS_LOCAL = window.location.hostname === 'localhost' || 
-                 window.location.hostname === '127.0.0.1';
+                 window.location.hostname === '127.0.0.1' ||
+                 window.location.protocol === 'file:';
+
 const IS_PRODUCTION = !IS_LOCAL && typeof Telegram !== 'undefined' && Telegram.WebApp;
 
-// Set the appropriate Telegram WebApp URL
-const TELEGRAM_WEBAPP_URL = IS_PRODUCTION ? 
-    'https://telegram.org/js/telegram-web-app.js' : 
-    'telegram-web-app.js';
-
-// Load the appropriate script
-const telegramScript = document.createElement('script');
-telegramScript.src = TELEGRAM_WEBAPP_URL;
-document.head.appendChild(telegramScript);
-
-// NEW: Bot configuration with updated credentials
-const BOT_CONFIG = {
-    token: "8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE", // Your new bot token
-    username: "TeleBlogOfficialBot", // Your new bot username
-    webAppUrl: "https://mcrdot.github.io/teleblog-lite", // Your GitHub Pages URL
-    webhookUrl: "https://teleblog-lite-bot.macrotiser-pk.workers.dev/webhook" // Your Cloudflare Worker URL
-};
-
-// Make config available globally
+// Enhanced configuration with fallbacks
 window.AppConfig = {
     supabase: SUPABASE_CONFIG,
     isLocal: IS_LOCAL,
     isProduction: IS_PRODUCTION,
-    telegramWebAppUrl: TELEGRAM_WEBAPP_URL,
-    bot: BOT_CONFIG
+    appVersion: '1.0.0',
+    debug: IS_LOCAL
 };
 
 console.log("AppConfig initialized:", {
     isLocal: IS_LOCAL,
     isProduction: IS_PRODUCTION,
-    supabaseUrl: SUPABASE_CONFIG.url,
-    botUsername: BOT_CONFIG.username
+    supabaseUrl: SUPABASE_CONFIG.url ? 'Configured' : 'Missing',
+    supabaseKey: SUPABASE_CONFIG.anonKey ? 'Configured' : 'Missing'
 });
+
+// Validate Supabase configuration
+if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+    console.error('❌ Supabase configuration is incomplete!');
+} else {
+    console.log('✅ Supabase configuration validated');
+}
