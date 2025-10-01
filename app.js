@@ -1,7 +1,6 @@
 // 3bd959cb-628a-4deb-ba9b-ed609025f9aa
-// ------------------------------------
 // app.js - TeleBlog Application with Supabase Integration
-// Enhanced with proper error handling and connection management
+// Enhanced with bottom navigation and proper state management
 
 // Global state
 let tg;
@@ -36,6 +35,9 @@ async function initializeApp() {
         restoreDraftContent();
         
         isAppInitialized = true;
+        
+        // Initialize bottom navigation state
+        updateNavigationState();
         
         if (supabaseConnected) {
             console.log('✅ App initialization completed - Supabase connected');
@@ -208,11 +210,36 @@ function createMockTelegramWebApp() {
     };
 }
 
+// Update navigation state for bottom nav
+function updateNavigationState() {
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Add active class to current view
+    const navItems = document.querySelectorAll('.nav-item');
+    switch(currentView) {
+        case 'feed':
+            if (navItems[0]) navItems[0].classList.add('active');
+            break;
+        case 'editor':
+            if (navItems[1]) navItems[1].classList.add('active');
+            break;
+        case 'profile':
+            if (navItems[2]) navItems[2].classList.add('active');
+            break;
+    }
+}
+
 // Navigate to different views
 function navigateTo(view, data = null) {
     console.log('Navigating to:', view);
     viewHistory.push({ view: currentView, data: data });
     currentView = view;
+    
+    // Update navigation state
+    updateNavigationState();
     
     switch(view) {
         case 'feed':
@@ -333,7 +360,6 @@ async function loadPosts() {
 // Display posts in the feed
 function showPosts() {
     const pageContent = document.getElementById('page-content');
-    const menuHtml = generateMenu();
     
     let postsHtml = '<div class="feed">';
     
@@ -389,20 +415,8 @@ function showPosts() {
     }
     
     postsHtml += '</div>';
-    pageContent.innerHTML = menuHtml + postsHtml;
+    pageContent.innerHTML = postsHtml;
     console.log('Posts displayed in UI');
-}
-
-// Generate menu
-function generateMenu() {
-    return `
-        <div class="menu">
-            <button class="menu-btn ${currentView === 'feed' ? 'active' : ''}" onclick="navigateTo('feed')">📝 For You</button>
-            <button class="menu-btn ${currentView === 'trending' ? 'active' : ''}" onclick="navigateTo('trending')">🔥 Trending</button>
-            <button class="menu-btn ${currentView === 'following' ? 'active' : ''}" onclick="navigateTo('following')">👥 Following</button>
-            <button class="menu-btn ${currentView === 'editor' ? 'active' : ''}" onclick="navigateTo('editor')">✍️ Create Post</button>
-        </div>
-    `;
 }
 
 // Format date
@@ -492,9 +506,8 @@ function updateUI(state, message = '') {
 
 function showEmptyState() {
     const pageContent = document.getElementById('page-content');
-    const menuHtml = generateMenu();
     
-    pageContent.innerHTML = menuHtml + `
+    pageContent.innerHTML = `
         <div class="empty-state">
             <h3>No posts yet</h3>
             <p>Be the first to create a post in this community!</p>
@@ -532,7 +545,7 @@ function showPostEditor() {
     pageContent.innerHTML = `
         <div class="editor-container">
             <div class="editor-header">
-                <button onclick="goBack()" class="btn btn-back">← Back</button>
+                <button onclick="navigateTo('feed')" class="btn btn-back">← Back</button>
                 <h2>Create New Post</h2>
                 <button onclick="savePost()" class="btn btn-primary">Publish</button>
             </div>
@@ -600,7 +613,6 @@ function showProfile() {
         pageContent.innerHTML = `
             <div class="profile-container">
                 <div class="profile-header">
-                    <button onclick="goBack()" class="btn btn-back">← Back</button>
                     <h2>Your Profile</h2>
                 </div>
                 <div class="profile-content">

@@ -17,6 +17,7 @@ deploy-bot.js
 # Environment & secrets
 .env
 tokens.txt
+gitpushcommands.txt
 
 # Dependencies
 /node_modules
