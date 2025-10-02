@@ -1,12 +1,13 @@
 # .gitignore
-node_modules/
 .env
 .env.local
 .DS_Store
 *.log
-#config.json
+
+config.json
+
 config.production.json
-output.doc
+Proj-Structure.txt
 telegram-web-app.js
 #package.json
 #package-lock.json

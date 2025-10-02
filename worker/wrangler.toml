@@ -1,9 +1,0 @@
-# worker/wrangler.toml - Cloudflare Worker configuration
-name = "teleblog-lite-bot"
-compatibility_date = "2024-01-25"
-account_id = "YOUR_ACCOUNT_ID"  # You'll get this from Cloudflare
-workers_dev = true
-
-[[routes]]
-pattern = "teleblog-lite-bot.macrotiser-pk.workers.dev/*"
-custom_domain = true

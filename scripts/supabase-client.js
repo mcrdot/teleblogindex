@@ -1,6 +1,6 @@
-// 3bd959cb-628a-4deb-ba9b-ed609025f9aa
+// 32c40404-569a-4c38-bea8-736e3865910e
 // ------------------------------------
-// scripts/supabase-client.js
+// scripts/supabase-client.js - UPDATED WITH USER TYPE SUPPORT
 let supabaseClient;
 let isInitialized = false;
 let connectionTested = false;
@@ -153,6 +153,8 @@ async function createUser(telegramUser) {
             last_name: telegramUser.last_name || null,
             language_code: telegramUser.language_code || null,
             is_premium: telegramUser.is_premium || false,
+            user_type: 'general', // Default user type
+            profile_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
@@ -176,6 +178,45 @@ async function createUser(telegramUser) {
     }
 }
 
+// NEW FUNCTION: Update user type
+async function updateUserType(userId, userType) {
+    if (!supabaseClient && !initSupabase()) {
+        console.warn("⚠️ Supabase not initialized in updateUserType");
+        return false;
+    }
+
+    // Test connection first
+    const connected = await testConnection();
+    if (!connected) {
+        console.warn("⚠️ No Supabase connection, cannot update user type");
+        return false;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("users")
+            .update({
+                user_type: userType,
+                profile_completed: true,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", userId)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("❌ Error updating user type:", error);
+            return false;
+        }
+
+        console.log("✅ User type updated successfully:", data.user_type);
+        return true;
+    } catch (err) {
+        console.error("❌ Exception in updateUserType:", err);
+        return false;
+    }
+}
+
 async function getPublishedPosts(limit = 10, offset = 0) {
     if (!supabaseClient && !initSupabase()) {
         console.warn("⚠️ Supabase not initialized, returning mock posts");
@@ -195,7 +236,7 @@ async function getPublishedPosts(limit = 10, offset = 0) {
             .from("posts")
             .select(`
                 *,
-                user:users(first_name, last_name, username)
+                user:users(first_name, last_name, username, user_type)
             `)
             .eq("is_published", true)
             .order("published_at", { ascending: false })
@@ -230,6 +271,8 @@ function getMockUser(telegramUser) {
         username: telegramUser.username || "user" + telegramUser.id,
         first_name: telegramUser.first_name || "Dev",
         last_name: telegramUser.last_name || "User",
+        user_type: 'general', // Mock user type
+        profile_completed: false,
         is_premium: false,
         created_at: new Date().toISOString(),
     };
@@ -245,7 +288,12 @@ function getMockPosts() {
             content: "This is mock content for development purposes. When your Supabase connection is working, you'll see real blog posts here.",
             tags: ["welcome", "demo"],
             image: null,
-            user: { first_name: "TeleBlog", last_name: "Team", username: "teleblog" },
+            user: { 
+                first_name: "TeleBlog", 
+                last_name: "Team", 
+                username: "teleblog",
+                user_type: "general"
+            },
             published_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
             is_published: true
@@ -257,7 +305,12 @@ function getMockPosts() {
             content: "This is another mock post. Check your Supabase configuration to see real posts.",
             tags: ["tutorial", "beginners"],
             image: null,
-            user: { first_name: "Guide", last_name: "Bot", username: "guidebot" },
+            user: { 
+                first_name: "Guide", 
+                last_name: "Bot", 
+                username: "guidebot",
+                user_type: "channel_owner"
+            },
             published_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
             created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
             is_published: true
@@ -269,7 +322,12 @@ function getMockPosts() {
             content: "Mock content about monetization strategies.",
             tags: ["monetization", "earnings"],
             image: null,
-            user: { first_name: "Revenue", last_name: "Expert", username: "earnings" },
+            user: { 
+                first_name: "Revenue", 
+                last_name: "Expert", 
+                username: "earnings",
+                user_type: "group_owner"
+            },
             published_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
             created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
             is_published: true
@@ -284,6 +342,7 @@ window.SupabaseClient = {
     testConnection,
     getUserByTelegramId,
     createUser,
+    updateUserType, // NEW: Added user type update function
     getPublishedPosts,
     getClient: () => supabaseClient,
     isInitialized: () => isInitialized,
