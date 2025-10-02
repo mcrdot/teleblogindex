@@ -1,22 +1,7 @@
-# .gitignore
-.env
-.env.local
-.DS_Store
-*.log
-
-config.json
-
-config.production.json
-Proj-Structure.txt
-telegram-web-app.js
-#package.json
-#package-lock.json
-deploy-bot.js
-/worker
-/supabase
-
 # Environment & secrets
 .env
+.env.local
+.env.production
 tokens.txt
 gitpushcommands.txt
 
@@ -24,12 +9,12 @@ gitpushcommands.txt
 /node_modules
 
 # Build / cache
-dist/
-build/
+/dist/
+/build/
 *.log
 
 # Backups / test files
-index0.html
+index8.html
 output.doc
 test.html
 test.js
@@ -39,4 +24,14 @@ tnc.css
 # OS/editor junk
 .DS_Store
 Thumbs.db
+*.tmp
 
+# Development configs
+config.json
+
+# Telegram bot files
+bot.js
+deploy-bot.js
+
+# Supabase local files
+/supabase/functions/create-user

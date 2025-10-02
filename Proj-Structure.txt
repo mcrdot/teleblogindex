@@ -1,0 +1,16 @@
+
+
+teleblog-lite/
+├── index.html
+├── config.js
+├── app.js
+├── theme.js
+├── styles.css
+├── scripts/
+│   ├── supabase-client.js
+│   ├── ads-manager.js
+│   └── config-loader.js
+├── worker/
+│   └── worker.js
+└── assets/
+    └── (images, etc.)
