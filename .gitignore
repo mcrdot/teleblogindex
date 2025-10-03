@@ -1,9 +1,7 @@
 # Environment & secrets
 .env
 .env.local
-.env.production
 tokens.txt
-gitpushcommands.txt
 
 # Dependencies
 /node_modules
@@ -36,5 +34,47 @@ config.json
 bot.js
 deploy-bot.js
 
-# Supabase local files
-/supabase/functions/create-user
+# ===== ADD THESE NEW ENTRIES =====
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+.node_repl_history
+
+# Package manager files
+.npm
+.yarn-integrity
+*.tgz
+jspm_packages/
+
+# Framework specific
+.next/
+.nuxt/
+.serverless/
+.fusebox/
+.netlify/
+_site/
+
+# OS specific
+.AppleDouble
+.LSOverride
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*~
+.directory

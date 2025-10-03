@@ -1,8 +1,8 @@
-// scripts/config-loader.js - UPDATED
+// scripts/config-loader.js - UPDATED WITH FIXED PATH
 (async function() {
     try {
-        // Try to load production config first
-        const response = await fetch('/config.production.json');
+        // FIXED: Remove leading slash for correct path
+        const response = await fetch('config.production.json');
         if (response.ok) {
             const config = await response.json();
             window.AppConfig = {
@@ -44,7 +44,9 @@ function initializeEnvironment() {
     // Set up based on environment
     if (window.AppConfig.environment === "development") {
         console.log('🔧 Running in development mode');
+        // Enable debug features if needed
     } else {
         console.log('🚀 Running in production mode');
+        // Disable debug features
     }
 }

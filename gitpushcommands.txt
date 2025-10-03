@@ -1,0 +1,47 @@
+git config --global user.name "mcrdot"
+git config --global user.email "macrotiserpk@gmail.com"
+
+
+git status
+git add .
+git commit -m "Fixed post creation functionality, updated savePost function, added RLS policies support, and improved error handling"
+git push origin main
+
+After pushing, verify deployment:
+
+    Wait 1-2 minutes for GitHub Pages to build
+
+    Visit your site: https://mcrdot.github.io/teleblog-lite/
+
+    Open browser console to check for errors
+
+    Test the post creation functionality
+
+Additional useful commands:
+
+    To see what changes you're about to commit:
+git diff --staged
+
+    To check your remote repository:
+git remote -v
+
+    To see your commit history:
+git log --oneline
+
+
+==========
+
+# Add the remote origin back
+git remote add origin https://github.com/mcrdot/teleblog-lite.git
+
+# Verify remote was added
+git remote -v
+
+# Force push to overwrite GitHub history
+git push origin main --force
+
+# If you have other branches, push them too
+git push origin --force --all
+
+# Set upstream tracking for future pushes
+git push --set-upstream origin main

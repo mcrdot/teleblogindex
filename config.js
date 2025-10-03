@@ -1,4 +1,4 @@
-// config.js - Updated for production
+// config.js - Updated for production (fallback)
 window.AppConfig = {
     supabase: {
         url: "https://hudrcdftoqcwxskhuahg.supabase.co",
@@ -10,3 +10,5 @@ window.AppConfig = {
     },
     environment: "production"
 };
+
+console.log('✅ Direct configuration loaded as fallback');
