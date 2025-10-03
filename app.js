@@ -740,6 +740,29 @@ function escapeHtml(str = '') {
     .replace(/>/g, '&gt;');
 }
 
+// =======================
+// Restore Draft Content
+// =======================
+function restoreDraftContent() {
+    try {
+        const draft = localStorage.getItem("teleblog_draft");
+        if (draft) {
+            const editor = document.getElementById("editor");
+            if (editor) {
+                editor.value = draft;
+                console.log("📝 Draft content restored");
+            } else {
+                console.warn("⚠️ Editor element not found for draft restore");
+            }
+        } else {
+            console.log("ℹ️ No draft content to restore");
+        }
+    } catch (err) {
+        console.error("❌ Failed to restore draft content:", err);
+    }
+}
+
+
 // Expose used functions for inline onclick handlers
 window.navigateTo = navigateTo;
 window.goBack = goBack;
