@@ -1,5 +1,3 @@
-// 32c40404-569a-4c38-bea8-736e3865910e
-// ------------------------------------
 // scripts/supabase-client.js - UPDATED WITH USER TYPE SUPPORT
 let supabaseClient;
 let isInitialized = false;
@@ -103,8 +101,9 @@ async function getUserByTelegramId(telegramId) {
     // Test connection first
     const connected = await testConnection();
     if (!connected) {
-        console.warn("⚠️ No Supabase connection, using mock user");
-        return getMockUser({ id: telegramId });
+        // CHANGED: Force real connection only - no mock fallback
+        console.error("❌ No Supabase connection - cannot proceed");
+        return null;
     }
 
     try {
@@ -116,27 +115,31 @@ async function getUserByTelegramId(telegramId) {
 
         if (error) {
             console.error("❌ Error fetching user:", error);
-            return getMockUser({ id: telegramId });
+            // CHANGED: No mock fallback
+            return null;
         }
 
         return data;
     } catch (err) {
         console.error("❌ Exception in getUserByTelegramId:", err);
-        return getMockUser({ id: telegramId });
+        // CHANGED: No mock fallback
+        return null;
     }
 }
 
 async function createUser(telegramUser) {
     if (!supabaseClient && !initSupabase()) {
         console.warn("⚠️ Supabase not initialized in createUser");
-        return getMockUser(telegramUser);
+        // CHANGED: No mock fallback
+        return null;
     }
 
     // Test connection first
     const connected = await testConnection();
     if (!connected) {
-        console.warn("⚠️ No Supabase connection, using mock user");
-        return getMockUser(telegramUser);
+        // CHANGED: Force real connection only - no mock fallback
+        console.error("❌ No Supabase connection - cannot proceed");
+        return null;
     }
 
     try {
@@ -167,14 +170,16 @@ async function createUser(telegramUser) {
 
         if (error) {
             console.error("❌ Error creating user:", error);
-            return getMockUser(telegramUser);
+            // CHANGED: No mock fallback
+            return null;
         }
 
         console.log("✅ User created successfully:", data.id);
         return data;
     } catch (err) {
         console.error("❌ Exception in createUser:", err);
-        return getMockUser(telegramUser);
+        // CHANGED: No mock fallback
+        return null;
     }
 }
 
@@ -188,7 +193,8 @@ async function updateUserType(userId, userType) {
     // Test connection first
     const connected = await testConnection();
     if (!connected) {
-        console.warn("⚠️ No Supabase connection, cannot update user type");
+        // CHANGED: Force real connection only
+        console.error("❌ No Supabase connection - cannot proceed");
         return false;
     }
 
@@ -220,14 +226,16 @@ async function updateUserType(userId, userType) {
 async function getPublishedPosts(limit = 10, offset = 0) {
     if (!supabaseClient && !initSupabase()) {
         console.warn("⚠️ Supabase not initialized, returning mock posts");
-        return getMockPosts();
+        // CHANGED: Return empty array instead of mock posts
+        return [];
     }
 
     // Test connection first
     const connected = await testConnection();
     if (!connected) {
         console.warn("⚠️ No Supabase connection, using mock posts");
-        return getMockPosts();
+        // CHANGED: Return empty array instead of mock posts
+        return [];
     }
 
     try {
@@ -245,23 +253,26 @@ async function getPublishedPosts(limit = 10, offset = 0) {
         if (error) {
             console.error("❌ Error fetching posts:", error);
             console.log("🔄 Falling back to mock posts");
-            return getMockPosts();
+            // CHANGED: Return empty array instead of mock posts
+            return [];
         }
 
         if (!data || data.length === 0) {
             console.warn("⚠️ No posts found in database, showing mock posts");
-            return getMockPosts();
+            // CHANGED: Return empty array instead of mock posts
+            return [];
         }
 
         console.log(`✅ Loaded ${data.length} real posts from Supabase`);
         return data;
     } catch (err) {
         console.error("❌ Exception in getPublishedPosts:", err);
-        return getMockPosts();
+        // CHANGED: Return empty array instead of mock posts
+        return [];
     }
 }
 
-// ─── Mock Generators ─────────────────────────────────────────────────────────
+// ─── Mock Generators (KEPT BUT NOT USED) ─────────────────────────────────────
 
 function getMockUser(telegramUser) {
     console.log("👤 Using mock user for development");

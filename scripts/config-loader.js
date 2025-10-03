@@ -1,83 +1,50 @@
-// scripts/config-loader.js
+// scripts/config-loader.js - UPDATED
 (async function() {
     try {
-        // Load configuration
-        const response = await fetch('/config.json');
+        // Try to load production config first
+        const response = await fetch('/config.production.json');
         if (response.ok) {
             const config = await response.json();
-            window.APP_CONFIG = config;
-            console.log('Configuration loaded successfully');
-            
-            // Initialize based on environment
-            initializeEnvironment();
+            window.AppConfig = {
+                supabase: {
+                    url: config.SUPABASE_URL,
+                    anonKey: config.SUPABASE_ANON_KEY
+                },
+                telegram: {
+                    botToken: config.TELEGRAM_BOT_TOKEN,
+                    webAppUrl: "https://mcrdot.github.io/teleblog-lite/"
+                },
+                environment: config.IS_DEVELOPMENT ? "development" : "production"
+            };
+            console.log('✅ Production configuration loaded successfully');
         } else {
-            throw new Error('Config file not found');
+            throw new Error('Production config not found');
         }
     } catch (error) {
-        console.error('Failed to load config:', error);
-        // Fallback to development mode
-        window.APP_CONFIG = {
-            IS_DEVELOPMENT: true,
-            TELEGRAM_BOT_TOKEN: '',
-            TELEGRAM_BOT_TOKEN_2: '',
-            SUPABASE_URL: 'https://hudrcdftoqcwxskhuahg.supabase.co',
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo',
-            MONETAG_ZONE_ID: '9803188'
+        console.error('❌ Failed to load production config:', error);
+        // Fallback to direct configuration
+        window.AppConfig = {
+            supabase: {
+                url: "https://hudrcdftoqcwxskhuahg.supabase.co",
+                anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo"
+            },
+            telegram: {
+                botToken: "8032387671:AAF_v7iLV43XqqE4wtEw2JD6jgvm0CcjYPE",
+                webAppUrl: "https://mcrdot.github.io/teleblog-lite/"
+            },
+            environment: "production"
         };
-        initializeEnvironment();
+        console.log('⚠️ Using direct configuration fallback');
     }
+    
+    initializeEnvironment();
 })();
 
 function initializeEnvironment() {
-    // Set up ads based on environment
-    if (window.APP_CONFIG.IS_DEVELOPMENT) {
-        console.log('Running in development mode');
-        setupDevelopmentAds();
+    // Set up based on environment
+    if (window.AppConfig.environment === "development") {
+        console.log('🔧 Running in development mode');
     } else {
-        console.log('Running in production mode');
-        setupProductionAds();
-    }
-}
-
-function setupDevelopmentAds() {
-    // Replace Monetag ads with dummy content during development
-    const originalScriptLoad = document.createElement('script').src;
-    Object.defineProperty(document.createElement('script'), 'src', {
-        get: function() { return this._src; },
-        set: function(value) {
-            this._src = value;
-            if (value.includes('libtl.com/sdk.js')) {
-                console.log('Monetag ad blocked in development mode');
-                // Don't load the actual script
-                return;
-            }
-            // Load other scripts normally
-            originalScriptLoad.call(this, value);
-        }
-    });
-    
-    // Add dummy ad content
-    window.addEventListener('DOMContentLoaded', function() {
-        const adContainer = document.getElementById('ad-container');
-        if (adContainer) {
-            adContainer.innerHTML = `
-                <div style="padding: 20px; text-align: center; background: #2d2d2d; border-radius: 8px;">
-                    <h3>Development Ad Preview</h3>
-                    <p>Real Monetag ad would appear here in production</p>
-                    <p style="font-size: 12px; color: #a0a0a0;">Zone ID: ${window.APP_CONFIG.MONETAG_ZONE_ID}</p>
-                </div>
-            `;
-        }
-    });
-}
-
-function setupProductionAds() {
-    // Load real Monetag ads only in production
-    if (!window.APP_CONFIG.IS_DEVELOPMENT) {
-        const script = document.createElement('script');
-        script.src = '//libtl.com/sdk.js';
-        script.setAttribute('data-zone', window.APP_CONFIG.MONETAG_ZONE_ID);
-        script.setAttribute('data-sdk', 'show_' + window.APP_CONFIG.MONETAG_ZONE_ID);
-        document.head.appendChild(script);
+        console.log('🚀 Running in production mode');
     }
 }
