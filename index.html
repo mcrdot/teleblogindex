@@ -1,4 +1,4 @@
-<!-- 32c40404-569a-4c38-bea8-736e3865910e -->
+<!-- ds = a18e7735-2548-4cb5-b92e-0ef3a16cf582 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,15 +57,15 @@
 
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <button class="nav-item active" onclick="navigateTo('feed')">
+    <button class="nav-item active" data-page="feed">
       <span class="nav-icon">📝</span>
       <span class="nav-label">Feed</span>
     </button>
-    <button class="nav-item" onclick="navigateTo('editor')">
+    <button class="nav-item" data-page="editor">
       <span class="nav-icon">✍️</span>
       <span class="nav-label">Create</span>
     </button>
-    <button class="nav-item" onclick="navigateTo('profile')">
+    <button class="nav-item" data-page="profile">
       <span class="nav-icon">👤</span>
       <span class="nav-label">Profile</span>
     </button>
@@ -73,6 +73,7 @@
 
   <!-- Scripts in CORRECT ORDER -->
   <script src="config.js"></script>
+  <script src="scripts/config-loader.js"></script> <!-- ADD THIS -->
   <script src="scripts/supabase-client.js"></script>
   <script src="app.js"></script>
   <script src="theme.js"></script>
@@ -98,18 +99,52 @@
       return { isLocal, isTelegram };
     }
 
-    // Update environment info
-    const env = detectEnvironment();
-    const envInfo = document.getElementById('environment-info');
-    
-    if (env.isLocal) {
-      document.getElementById('dev-warning').style.display = 'block';
-      envInfo.textContent = 'Environment: Development (Local)';
-    } else {
-      envInfo.textContent = 'Environment: Production (Telegram)';
+    // Simple navigation function
+    function navigateTo(page) {
+      console.log('Navigating to:', page);
+      // Remove active class from all nav items
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Add active class to clicked item
+      event.target.closest('.nav-item').classList.add('active');
+      
+      // Update page content
+      const pageContent = document.getElementById('page-content');
+      pageContent.innerHTML = `<div class="loading"><p>Loading ${page}...</p></div>`;
+      
+      // You can add page-specific logic here
+      if (window.TeleBlogApp && window.TeleBlogApp.loadPage) {
+        window.TeleBlogApp.loadPage(page);
+      }
     }
 
-    console.log('✅ All scripts loaded successfully');
+    // Add event listeners to nav items
+    document.addEventListener('DOMContentLoaded', function() {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const page = this.getAttribute('data-page');
+          navigateTo(page);
+        });
+      });
+    });
+
+    // Update environment info
+    document.addEventListener('DOMContentLoaded', function() {
+      const env = detectEnvironment();
+      const envInfo = document.getElementById('environment-info');
+      
+      if (env.isLocal) {
+        document.getElementById('dev-warning').style.display = 'block';
+        envInfo.textContent = 'Environment: Development (Local)';
+      } else {
+        envInfo.textContent = 'Environment: Production (Telegram)';
+      }
+
+      console.log('✅ All scripts loaded successfully');
+    });
   </script>
 </body>
 </html>
