@@ -1,5 +1,5 @@
-// app.js - CLEAN VERSION WITHOUT SYNTAX ERRORS
-console.log('🚀 TeleBlog Lite App Starting...');
+// app.js - PRODUCTION READY WITH LEGAL CHARACTERS ONLY
+console.log('TeleBlog Lite App Starting...');
 
 // Global app state
 window.TeleBlogApp = {
@@ -9,15 +9,15 @@ window.TeleBlogApp = {
     // Initialize the application
     async initializeApp() {
         try {
-            console.log('🔧 Initializing TeleBlog application...');
+            console.log('Initializing TeleBlog application...');
             
             // Wait for configuration
             if (!window.AppConfig) {
-                console.log('⏳ Waiting for configuration...');
+                console.log('Waiting for configuration...');
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            console.log('✅ Configuration loaded:', window.AppConfig?.environment);
+            console.log('Configuration loaded:', window.AppConfig?.environment);
             
             // Initialize Supabase
             await this.initializeSupabase();
@@ -29,7 +29,7 @@ window.TeleBlogApp = {
             await this.loadInitialContent();
             
         } catch (error) {
-            console.error('❌ App initialization failed:', error);
+            console.error('App initialization failed:', error);
             this.showError('Application failed to load. Please refresh.');
         }
     },
@@ -39,19 +39,19 @@ window.TeleBlogApp = {
         if (window.SupabaseClient && window.SupabaseClient.init) {
             const supabase = window.SupabaseClient.init();
             if (supabase) {
-                console.log('✅ Supabase client initialized');
+                console.log('Supabase client initialized');
                 
                 // Test connection
                 const connected = await window.SupabaseClient.testConnection();
                 if (connected) {
-                    console.log('✅ Supabase connection verified');
+                    console.log('Supabase connection verified');
                 } else {
-                    console.error('❌ Supabase connection failed');
+                    console.error('Supabase connection failed');
                     this.showError('Database connection failed. Using demo mode.');
                 }
             }
         } else {
-            console.error('❌ Supabase client not available');
+            console.error('Supabase client not available');
             this.showError('Database service unavailable.');
         }
     },
@@ -61,7 +61,7 @@ window.TeleBlogApp = {
         if (window.Telegram && window.Telegram.WebApp) {
             try {
                 const tg = window.Telegram.WebApp;
-                console.log('✅ Telegram Web App detected');
+                console.log('Telegram Web App detected');
                 
                 // Expand the app
                 tg.expand();
@@ -73,19 +73,19 @@ window.TeleBlogApp = {
                 // Get user data
                 const userData = tg.initDataUnsafe?.user;
                 if (userData) {
-                    console.log('👤 Telegram user detected:', userData);
+                    console.log('Telegram user detected:', userData);
                     await this.handleTelegramUser(userData);
                 } else {
-                    console.log('ℹ️ No Telegram user data - running in web mode');
+                    console.log('No Telegram user data - running in web mode');
                     this.showWebModeMessage();
                 }
                 
             } catch (error) {
-                console.warn('⚠️ Telegram init failed:', error);
+                console.warn('Telegram init failed:', error);
                 this.showWebModeMessage();
             }
         } else {
-            console.log('🌐 Running in web browser mode');
+            console.log('Running in web browser mode');
             this.showWebModeMessage();
         }
     },
@@ -93,23 +93,23 @@ window.TeleBlogApp = {
     // Handle Telegram user
     async handleTelegramUser(telegramUser) {
         try {
-            console.log('🔐 Processing Telegram user...');
+            console.log('Processing Telegram user...');
             
             if (window.SupabaseClient && window.SupabaseClient.createUser) {
                 const user = await window.SupabaseClient.createUser(telegramUser);
                 if (user) {
                     this.currentUser = user;
-                    console.log('✅ User processed:', user.id);
+                    console.log('User processed:', user.id);
                     this.updateUserInfo(user);
                 } else {
-                    console.warn('⚠️ User creation failed - using demo user');
+                    console.warn('User creation failed - using demo user');
                     this.createDemoUser();
                 }
             } else {
                 this.createDemoUser();
             }
         } catch (error) {
-            console.error('❌ User handling failed:', error);
+            console.error('User handling failed:', error);
             this.createDemoUser();
         }
     },
@@ -140,14 +140,14 @@ window.TeleBlogApp = {
     // Load initial content
     async loadInitialContent() {
         try {
-            console.log('📝 Loading initial content...');
+            console.log('Loading initial content...');
             this.showLoading('Loading posts...');
             
             // Load posts for feed
             await this.loadPosts();
             
         } catch (error) {
-            console.error('❌ Content loading failed:', error);
+            console.error('Content loading failed:', error);
             this.showError('Failed to load content.');
         }
     },
@@ -164,14 +164,14 @@ window.TeleBlogApp = {
             
             // If no posts, show demo content
             if (!posts || posts.length === 0) {
-                console.log('ℹ️ No posts found - showing demo content');
+                console.log('No posts found - showing demo content');
                 posts = this.getDemoPosts();
             }
             
             this.displayPosts(posts);
             
         } catch (error) {
-            console.error('❌ Posts loading failed:', error);
+            console.error('Posts loading failed:', error);
             this.showError('Failed to load posts.');
         }
     },
@@ -180,14 +180,14 @@ window.TeleBlogApp = {
     displayPosts(posts) {
         const container = document.getElementById('page-content');
         if (!container) {
-            console.error('❌ Page content container not found');
+            console.error('Page content container not found');
             return;
         }
         
         if (posts.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">📝</div>
+                    <div class="empty-icon">No posts</div>
                     <h3>No Posts Yet</h3>
                     <p>Be the first to create a post!</p>
                 </div>
@@ -341,7 +341,7 @@ window.TeleBlogApp = {
         if (container) {
             container.innerHTML = `
                 <div class="error-message">
-                    <div class="error-icon">⚠️</div>
+                    <div class="error-icon">Error</div>
                     <h3>Something went wrong</h3>
                     <p>${message}</p>
                     <button onclick="TeleBlogApp.initializeApp()" class="btn">Try Again</button>
@@ -351,7 +351,7 @@ window.TeleBlogApp = {
     },
     
     showWebModeMessage() {
-        console.log('🌐 Web mode activated');
+        console.log('Web mode activated');
         this.createDemoUser();
     }
 };
@@ -364,3 +364,6 @@ if (document.readyState === 'loading') {
 } else {
     window.TeleBlogApp.initializeApp();
 }
+
+// Export for global access
+console.log('TeleBlog App module loaded successfully');
