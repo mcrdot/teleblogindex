@@ -697,3 +697,214 @@ footer {
 button, input, textarea, .post-card, .menu-btn, .nav-item {
   transition: all 0.3s ease;
 }
+
+/* ===== USER ENROLLMENT STYLES ===== */
+.enrollment-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.enrollment-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.enrollment-header h2 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.enrollment-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.user-type-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.user-type-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.user-type-card:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.user-type-card[data-type="group_admin"]:hover {
+    border-color: var(--accent-green);
+}
+
+.user-type-card[data-type="channel_admin"]:hover {
+    border-color: var(--accent-purple);
+}
+
+.type-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.user-type-card h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.user-type-card p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.user-type-card ul {
+    text-align: left;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    flex-grow: 1;
+}
+
+.user-type-card li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.type-select-btn {
+    width: 100%;
+    margin-top: auto;
+}
+
+.user-type-card[data-type="group_admin"] .type-select-btn {
+    background-color: var(--accent-green);
+}
+
+.user-type-card[data-type="channel_admin"] .type-select-btn {
+    background-color: var(--accent-purple);
+}
+
+.enrollment-footer {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.enrollment-footer .note {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* User type badges */
+.user-type-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.user-type-badge.general {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.user-type-badge.group_admin {
+    background-color: var(--accent-green);
+    color: var(--button-text);
+}
+
+.user-type-badge.channel_admin {
+    background-color: var(--accent-purple);
+    color: var(--button-text);
+}
+
+/* Profile type indicators */
+.user-type.general {
+    color: var(--text-secondary);
+}
+
+.user-type.group_admin {
+    color: var(--accent-green);
+    font-weight: bold;
+}
+
+.user-type.channel_admin {
+    color: var(--accent-purple);
+    font-weight: bold;
+}
+
+/* Upgrade section */
+.upgrade-section {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+    border-left: 4px solid var(--accent-blue);
+}
+
+.upgrade-section h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.upgrade-section p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.upgrade-options {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Feed header with create button */
+.feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.feed-header h2 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Responsive design for enrollment */
+@media (max-width: 768px) {
+    .user-type-selection {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-type-card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .feed-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .upgrade-options {
+        flex-direction: column;
+    }
+}

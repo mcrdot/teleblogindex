@@ -1,22 +1,22 @@
-// scripts/supabase-client.js - DEBUGGING VERSION
+// scripts/supabase-client.js - COMPLETE VERSION WITH USER TYPE SUPPORT
 let supabaseClient;
 let isInitialized = false;
 let connectionTested = false;
 
 function initSupabase() {
   if (isInitialized && supabaseClient) {
-    console.log('✅ Supabase already initialized');
+    console.log('Supabase already initialized');
     return supabaseClient;
   }
 
   if (!window.AppConfig || !window.AppConfig.supabase) {
-    console.error('❌ Supabase configuration not found in AppConfig');
+    console.error('Supabase configuration not found in AppConfig');
     return null;
   }
 
   const config = window.AppConfig.supabase;
   if (!config.url || !config.anonKey) {
-    console.error('❌ Supabase URL or anonKey missing');
+    console.error('Supabase URL or anonKey missing');
     return null;
   }
 
@@ -35,10 +35,10 @@ function initSupabase() {
     });
 
     isInitialized = true;
-    console.log('✅ Supabase client initialized');
+    console.log('Supabase client initialized');
     return supabaseClient;
   } catch (err) {
-    console.error('❌ Failed to initialize Supabase client:', err);
+    console.error('Failed to initialize Supabase client:', err);
     return null;
   }
 }
@@ -47,23 +47,23 @@ async function testConnection() {
   if (connectionTested) return true;
 
   if (!supabaseClient && !initSupabase()) {
-    console.warn('⚠️ Cannot test connection - Supabase not initialized');
+    console.warn('Cannot test connection - Supabase not initialized');
     return false;
   }
 
   try {
-    console.log('🔍 Testing Supabase connection...');
+    console.log('Testing Supabase connection...');
     
-    // Simple connection test using a system table
+    // Simple connection test
     const { data, error } = await supabaseClient
-      .from('posts')
+      .from('users')
       .select('count')
       .limit(1)
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Supabase connection test failed:', error);
-      console.log('🔧 Error details:', {
+      console.error('Supabase connection test failed:', error);
+      console.log('Error details:', {
         code: error.code,
         message: error.message,
         details: error.details,
@@ -73,11 +73,11 @@ async function testConnection() {
       return false;
     }
 
-    console.log('✅ Supabase connection test successful');
+    console.log('Supabase connection test successful');
     connectionTested = true;
     return true;
   } catch (err) {
-    console.error('❌ Connection test exception:', err);
+    console.error('Connection test exception:', err);
     connectionTested = false;
     return false;
   }
@@ -87,18 +87,18 @@ async function testConnection() {
 
 async function getUserByTelegramId(telegramId) {
   if (!supabaseClient && !initSupabase()) {
-    console.warn('⚠️ Supabase not initialized in getUserByTelegramId');
+    console.warn('Supabase not initialized in getUserByTelegramId');
     return null;
   }
 
   const connected = await testConnection();
   if (!connected) {
-    console.error('❌ No Supabase connection - cannot proceed');
+    console.error('No Supabase connection - cannot proceed');
     return null;
   }
 
   try {
-    console.log(`🔍 Fetching user with telegram_id: ${telegramId}`);
+    console.log(`Fetching user with telegram_id: ${telegramId}`);
     const { data, error } = await supabaseClient
       .from('users')
       .select('*')
@@ -106,8 +106,8 @@ async function getUserByTelegramId(telegramId) {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Error fetching user:', error);
-      console.log('🔧 User fetch error details:', {
+      console.error('Error fetching user:', error);
+      console.log('User fetch error details:', {
         code: error.code,
         message: error.message,
         details: error.details
@@ -115,23 +115,23 @@ async function getUserByTelegramId(telegramId) {
       return null;
     }
 
-    console.log('✅ User fetch result:', data ? 'User found' : 'User not found');
+    console.log('User fetch result:', data ? 'User found' : 'User not found');
     return data;
   } catch (err) {
-    console.error('❌ Exception in getUserByTelegramId:', err);
+    console.error('Exception in getUserByTelegramId:', err);
     return null;
   }
 }
 
 async function createUser(telegramUser) {
   if (!supabaseClient && !initSupabase()) {
-    console.warn('⚠️ Supabase not initialized in createUser');
+    console.warn('Supabase not initialized in createUser');
     return null;
   }
 
   const connected = await testConnection();
   if (!connected) {
-    console.error('❌ No Supabase connection - cannot proceed');
+    console.error('No Supabase connection - cannot proceed');
     return null;
   }
 
@@ -139,7 +139,7 @@ async function createUser(telegramUser) {
     // if user exists, return it
     const existingUser = await getUserByTelegramId(telegramUser.id);
     if (existingUser && existingUser.id) {
-      console.log('ℹ️ User already exists:', existingUser.id);
+      console.log('User already exists:', existingUser.id);
       return existingUser;
     }
 
@@ -154,7 +154,7 @@ async function createUser(telegramUser) {
       profile_completed: false
     };
 
-    console.log('📝 Creating new user:', userData);
+    console.log('Creating new user:', userData);
     const { data, error } = await supabaseClient
       .from('users')
       .insert(userData)
@@ -162,8 +162,8 @@ async function createUser(telegramUser) {
       .single();
 
     if (error) {
-      console.error('❌ Error creating user:', error);
-      console.log('🔧 User creation error details:', {
+      console.error('Error creating user:', error);
+      console.log('User creation error details:', {
         code: error.code,
         message: error.message,
         details: error.details
@@ -171,28 +171,82 @@ async function createUser(telegramUser) {
       return null;
     }
 
-    console.log('✅ User created successfully:', data.id);
+    console.log('User created successfully:', data.id);
     return data;
   } catch (err) {
-    console.error('❌ Exception in createUser:', err);
+    console.error('Exception in createUser:', err);
     return null;
   }
 }
 
+// UPDATE USER TYPE FUNCTION - MISSING IN PREVIOUS VERSION
+async function updateUserType(userId, userType) {
+  if (!supabaseClient && !initSupabase()) {
+    console.warn('Supabase not initialized in updateUserType');
+    return false;
+  }
+
+  const connected = await testConnection();
+  if (!connected) {
+    console.error('No Supabase connection - cannot proceed');
+    return false;
+  }
+
+  try {
+    // Validate user type
+    const validTypes = ['general', 'group_admin', 'channel_admin'];
+    if (!validTypes.includes(userType)) {
+      console.error('Invalid user type:', userType);
+      return false;
+    }
+
+    console.log(`Updating user ${userId} to type: ${userType}`);
+    
+    const { data, error } = await supabaseClient
+      .from('users')
+      .update({
+        user_type: userType,
+        profile_completed: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating user type:', error);
+      console.log('User type update error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      });
+      return false;
+    }
+
+    console.log('User type updated successfully:', data.user_type);
+    return true;
+  } catch (err) {
+    console.error('Exception in updateUserType:', err);
+    return false;
+  }
+}
+
+// ─── Post Management Functions ──────────────────────────────────────────────
+
 async function getPublishedPosts(limit = 10, offset = 0) {
   if (!supabaseClient && !initSupabase()) {
-    console.warn('⚠️ Supabase not initialized, returning empty array');
+    console.warn('Supabase not initialized, returning empty array');
     return [];
   }
 
   const connected = await testConnection();
   if (!connected) {
-    console.warn('⚠️ No Supabase connection, returning empty array');
+    console.warn('No Supabase connection, returning empty array');
     return [];
   }
 
   try {
-    console.log('📡 Fetching posts from Supabase...');
+    console.log('Fetching posts from Supabase...');
     const { data, error } = await supabaseClient
       .from('posts')
       .select(`
@@ -204,8 +258,8 @@ async function getPublishedPosts(limit = 10, offset = 0) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('❌ Error fetching posts:', error);
-      console.log('🔧 Posts fetch error details:', {
+      console.error('Error fetching posts:', error);
+      console.log('Posts fetch error details:', {
         code: error.code,
         message: error.message,
         details: error.details,
@@ -215,15 +269,48 @@ async function getPublishedPosts(limit = 10, offset = 0) {
     }
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ No posts found in database');
+      console.warn('No posts found in database');
       return [];
     }
 
-    console.log(`✅ Loaded ${data.length} posts from Supabase`);
+    console.log(`Loaded ${data.length} posts from Supabase`);
     return data;
   } catch (err) {
-    console.error('❌ Exception in getPublishedPosts:', err);
+    console.error('Exception in getPublishedPosts:', err);
     return [];
+  }
+}
+
+// Create new post function for future use
+async function createPost(postData) {
+  if (!supabaseClient && !initSupabase()) {
+    console.warn('Supabase not initialized in createPost');
+    return null;
+  }
+
+  const connected = await testConnection();
+  if (!connected) {
+    console.error('No Supabase connection - cannot proceed');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('posts')
+      .insert(postData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating post:', error);
+      return null;
+    }
+
+    console.log('Post created successfully:', data.id);
+    return data;
+  } catch (err) {
+    console.error('Exception in createPost:', err);
+    return null;
   }
 }
 
@@ -233,7 +320,9 @@ window.SupabaseClient = {
   testConnection,
   getUserByTelegramId,
   createUser,
+  updateUserType, // NOW INCLUDED!
   getPublishedPosts,
+  createPost,
   getClient: () => supabaseClient,
   isInitialized: () => isInitialized,
   isConnected: () => connectionTested
