@@ -65,22 +65,75 @@ header {
   color: var(--accent-blue);
 }
 
+/* Enhanced header user info styles */
 .user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.user-info:hover {
+    background-color: var(--bg-tertiary);
 }
 
 .avatar {
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  background-color: var(--accent-purple);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: var(--button-text);
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: var(--accent-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--button-text);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.avatar.group-admin {
+    background-color: var(--accent-green);
+}
+
+.avatar.channel-admin {
+    background-color: var(--accent-blue);
+}
+
+.user-info span {
+    color: var(--text-primary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* User type badges in header */
+.user-type-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.user-type-badge.general {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.user-type-badge.group_admin {
+    background-color: var(--accent-green);
+    color: var(--button-text);
+}
+
+.user-type-badge.channel_admin {
+    background-color: var(--accent-purple);
+    color: var(--button-text);
 }
 
 #theme-toggle {
