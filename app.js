@@ -1,4 +1,6 @@
-// app.js - WITH PROPER HEADER USER SYNC
+// ds = a18e7735-2548-4cb5-b92e-0ef3a16cf582
+
+// app.js - FIXED USER DATA LOADING FROM SUPABASE
 console.log('🚀 TeleBlog Lite App Starting...');
 
 // Global app state
@@ -68,40 +70,93 @@ window.TeleBlogApp = {
                 tg.setHeaderColor('#ffffff');
                 tg.setBackgroundColor('#ffffff');
                 
-                // Get user data
+                // Get user data from Telegram
                 const userData = tg.initDataUnsafe?.user;
                 if (userData) {
                     console.log('👤 Telegram user detected:', userData);
                     await this.handleUserEnrollment(userData);
                 } else {
-                    console.log('ℹ️ No Telegram user data - running in web mode');
-                    this.showWebModeMessage();
+                    console.log('ℹ️ No Telegram user data available');
+                    // Even if no Telegram data, try to load from session/local storage
+                    await this.tryLoadExistingSession();
                 }
                 
             } catch (error) {
                 console.warn('⚠️ Telegram init failed:', error);
-                this.showWebModeMessage();
+                await this.tryLoadExistingSession();
             }
         } else {
             console.log('🌐 Running in web browser mode');
+            await this.tryLoadExistingSession();
+        }
+    },
+    
+    // Try to load existing user session
+    async tryLoadExistingSession() {
+        try {
+            // Check if we have a stored user ID
+            const storedUserId = localStorage.getItem('teleblog-user-id');
+            if (storedUserId && window.SupabaseClient) {
+                console.log('🔍 Attempting to load stored user:', storedUserId);
+                
+                // Try to get user from Supabase by ID
+                const supabase = window.SupabaseClient.getClient();
+                if (supabase) {
+                    const { data: user, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('id', storedUserId)
+                        .single();
+                    
+                    if (!error && user) {
+                        console.log('✅ Loaded user from storage:', user.username);
+                        this.currentUser = user;
+                        this.updateHeaderUserInfo(this.currentUser);
+                        await this.loadInitialContent();
+                        return;
+                    }
+                }
+            }
+            
+            // If no stored session, show web mode
+            this.showWebModeMessage();
+            
+        } catch (error) {
+            console.error('❌ Session loading failed:', error);
             this.showWebModeMessage();
         }
     },
     
-    // Complete user enrollment process
+    // Complete user enrollment process - FIXED VERSION
     async handleUserEnrollment(telegramUser) {
         try {
             console.log('🔐 Starting user enrollment process...');
+            console.log('📱 Telegram User Data:', {
+                id: telegramUser.id,
+                username: telegramUser.username,
+                first_name: telegramUser.first_name,
+                last_name: telegramUser.last_name
+            });
             
             if (window.SupabaseClient && window.SupabaseClient.createUser) {
-                // Step 1: Check if user exists
+                // Step 1: Check if user exists in Supabase
                 const existingUser = await window.SupabaseClient.getUserByTelegramId(telegramUser.id);
                 
                 if (existingUser) {
-                    // User exists - update session and proceed
-                    console.log('✅ Existing user found:', existingUser.id);
+                    // User exists in Supabase - use the real data
+                    console.log('✅ Existing Supabase user found:', {
+                        id: existingUser.id,
+                        username: existingUser.username,
+                        first_name: existingUser.first_name,
+                        user_type: existingUser.user_type
+                    });
+                    
                     this.currentUser = existingUser;
-                    this.updateHeaderUserInfo(this.currentUser); // UPDATE HEADER
+                    
+                    // Store user ID for future sessions
+                    localStorage.setItem('teleblog-user-id', existingUser.id);
+                    
+                    this.updateHeaderUserInfo(this.currentUser);
                     
                     // Check if user needs to complete profile
                     if (!existingUser.profile_completed) {
@@ -110,24 +165,35 @@ window.TeleBlogApp = {
                         await this.loadInitialContent();
                     }
                 } else {
-                    // New user - create account
-                    console.log('🆕 New user detected, creating account...');
+                    // New user - create account in Supabase with Telegram data
+                    console.log('🆕 Creating new user in Supabase with Telegram data...');
                     const newUser = await window.SupabaseClient.createUser(telegramUser);
                     
                     if (newUser) {
+                        console.log('✅ New Supabase user created:', {
+                            id: newUser.id,
+                            username: newUser.username,
+                            first_name: newUser.first_name,
+                            user_type: newUser.user_type
+                        });
+                        
                         this.currentUser = newUser;
                         this.isNewUser = true;
-                        console.log('✅ New user created:', newUser.id);
-                        this.updateHeaderUserInfo(this.currentUser); // UPDATE HEADER
+                        
+                        // Store user ID for future sessions
+                        localStorage.setItem('teleblog-user-id', newUser.id);
+                        
+                        this.updateHeaderUserInfo(this.currentUser);
                         
                         // Show user type selection for new users
                         this.showUserTypeSelection(newUser);
                     } else {
-                        console.error('❌ Failed to create user account');
+                        console.error('❌ Failed to create user account in Supabase');
                         this.showError('Failed to create user account. Please try again.');
                     }
                 }
             } else {
+                console.error('❌ Supabase client not available for user creation');
                 this.createDemoUser();
             }
         } catch (error) {
@@ -136,7 +202,7 @@ window.TeleBlogApp = {
         }
     },
     
-    // Update user info in header - ENHANCED VERSION
+    // Update user info in header - IMPROVED VERSION
     updateHeaderUserInfo(user) {
         const userInfo = document.getElementById('user-info');
         if (!userInfo) {
@@ -144,14 +210,22 @@ window.TeleBlogApp = {
             return;
         }
         
-        console.log('🔄 Updating header with user:', user);
+        console.log('🔄 Updating header with REAL user data:', {
+            username: user.username,
+            first_name: user.first_name,
+            user_type: user.user_type
+        });
         
-        // Update avatar
+        // Use REAL user data from Supabase, not fallback
+        const displayName = user.first_name || user.username || 'User';
+        const username = user.username ? `@${user.username}` : 'No username';
+        
+        // Update avatar with real user initial
         const avatar = userInfo.querySelector('.avatar');
         if (avatar) {
             const firstLetter = user.first_name?.charAt(0) || user.username?.charAt(0) || 'U';
             avatar.textContent = firstLetter.toUpperCase();
-            avatar.title = `${user.first_name || 'User'} - ${this.getUserTypeDisplayName(user.user_type)}`;
+            avatar.title = `${displayName} (${username}) - ${this.getUserTypeDisplayName(user.user_type)}`;
             
             // Add visual indicator for user type
             avatar.className = 'avatar';
@@ -162,20 +236,19 @@ window.TeleBlogApp = {
             }
         }
         
-        // Update user text
+        // Update user text with REAL data
         const span = userInfo.querySelector('span');
         if (span) {
-            const userName = user.first_name || user.username || 'User';
             const typeBadge = user.user_type !== 'general' ? 
                 ` <span class="user-type-badge ${user.user_type}">${this.getUserTypeDisplayName(user.user_type)}</span>` : '';
             
-            span.innerHTML = `${userName}${typeBadge}`;
+            span.innerHTML = `${displayName}${typeBadge}`;
         }
         
-        // Update user info title/tooltip
-        userInfo.title = `Telegram ID: ${user.telegram_id} | Username: @${user.username || 'none'} | Type: ${this.getUserTypeDisplayName(user.user_type)}`;
+        // Update user info title/tooltip with real Telegram data
+        userInfo.title = `Telegram: ${username} | Name: ${displayName} | Type: ${this.getUserTypeDisplayName(user.user_type)}`;
         
-        console.log('✅ Header updated with user data');
+        console.log('✅ Header updated with REAL Supabase user data');
     },
     
     // Show user type selection modal
@@ -183,38 +256,45 @@ window.TeleBlogApp = {
         const pageContent = document.getElementById('page-content');
         if (!pageContent) return;
         
+        // Show the REAL user's name in the welcome message
+        const userName = user.first_name || user.username || 'there';
+        
         pageContent.innerHTML = `
             <div class="enrollment-container">
                 <div class="enrollment-header">
-                    <h2>👋 Welcome to TeleBlog!</h2>
-                    <p>Choose how you plan to use this platform</p>
+                    <h2>👋 Welcome ${userName}!</h2>
+                    <p>Your Telegram account is connected. Choose how you plan to use TeleBlog:</p>
+                    <div class="user-info-summary">
+                        <p><strong>Telegram:</strong> @${user.username || 'no-username'}</p>
+                        <p><strong>Name:</strong> ${user.first_name || 'Not provided'} ${user.last_name || ''}</p>
+                    </div>
                 </div>
                 
                 <div class="user-type-selection">
                     <div class="user-type-card" data-type="general">
                         <div class="type-icon">👤</div>
                         <h3>General User</h3>
-                        <p>Read posts, interact with content, and create basic posts</p>
+                        <p>Read posts, interact with content</p>
                         <ul>
                             <li>Read all published posts</li>
                             <li>Like and comment on posts</li>
-                            <li>Create basic blog posts</li>
                             <li>Personal profile</li>
+                            <li>Basic interactions</li>
                         </ul>
                         <button class="btn type-select-btn" onclick="TeleBlogApp.selectUserType('general')">
-                            Select General
+                            Continue as General
                         </button>
                     </div>
                     
                     <div class="user-type-card" data-type="group_admin">
                         <div class="type-icon">👥</div>
                         <h3>Group Admin</h3>
-                        <p>Manage Telegram group content and announcements</p>
+                        <p>Manage Telegram group content</p>
                         <ul>
                             <li>All General features</li>
-                            <li>Group-specific posts</li>
-                            <li>Announcement scheduling</li>
-                            <li>Member engagement analytics</li>
+                            <li>Create and manage posts</li>
+                            <li>Group announcements</li>
+                            <li>Content scheduling</li>
                         </ul>
                         <button class="btn type-select-btn" onclick="TeleBlogApp.selectUserType('group_admin')">
                             Select Group Admin
@@ -224,12 +304,12 @@ window.TeleBlogApp = {
                     <div class="user-type-card" data-type="channel_admin">
                         <div class="type-icon">📢</div>
                         <h3>Channel Admin</h3>
-                        <p>Manage Telegram channel content and broadcasts</p>
+                        <p>Manage Telegram channel content</p>
                         <ul>
                             <li>All General features</li>
-                            <li>Channel-specific posts</li>
-                            <li>Broadcast scheduling</li>
-                            <li>Subscriber analytics</li>
+                            <li>Create broadcast posts</li>
+                            <li>Channel management</li>
+                            <li>Advanced scheduling</li>
                         </ul>
                         <button class="btn type-select-btn" onclick="TeleBlogApp.selectUserType('channel_admin')">
                             Select Channel Admin
@@ -238,7 +318,7 @@ window.TeleBlogApp = {
                 </div>
                 
                 <div class="enrollment-footer">
-                    <p class="note">You can change this later in your profile settings</p>
+                    <p class="note">You can change your account type later in profile settings</p>
                 </div>
             </div>
         `;
@@ -262,30 +342,31 @@ window.TeleBlogApp = {
                 const success = await window.SupabaseClient.updateUserType(this.currentUser.id, userType);
                 
                 if (success) {
-                    console.log('✅ User type updated successfully');
+                    console.log('✅ User type updated successfully in Supabase');
                     
-                    // Update local user object
+                    // Update local user object with REAL data
                     this.currentUser.user_type = userType;
                     this.currentUser.profile_completed = true;
                     
-                    // UPDATE HEADER WITH NEW TYPE
+                    // UPDATE HEADER WITH REAL USER DATA
                     this.updateHeaderUserInfo(this.currentUser);
                     
-                    // Show success message
-                    this.showNotification(`Account setup complete! Welcome as ${this.getUserTypeDisplayName(userType)}`, 'success');
+                    // Show success message with real username
+                    const userName = this.currentUser.first_name || this.currentUser.username || 'User';
+                    this.showNotification(`Welcome ${userName}! Account setup complete as ${this.getUserTypeDisplayName(userType)}`, 'success');
                     
                     // Load main content
                     await this.loadInitialContent();
                     
                 } else {
-                    console.error('❌ Failed to update user type');
+                    console.error('❌ Failed to update user type in Supabase');
                     this.showError('Failed to complete setup. Please try again.');
                 }
             } else {
-                // Fallback for demo mode
+                console.warn('⚠️ Supabase update not available, using local update');
                 this.currentUser.user_type = userType;
                 this.currentUser.profile_completed = true;
-                this.updateHeaderUserInfo(this.currentUser); // UPDATE HEADER
+                this.updateHeaderUserInfo(this.currentUser);
                 await this.loadInitialContent();
             }
             
@@ -305,8 +386,9 @@ window.TeleBlogApp = {
         return types[userType] || 'User';
     },
     
-    // Create demo user for web mode
+    // Create demo user for web mode (only when no real user available)
     createDemoUser() {
+        console.log('🔄 Creating demo user (no real user data available)');
         this.currentUser = {
             id: 'demo-user',
             telegram_id: 0,
@@ -317,6 +399,12 @@ window.TeleBlogApp = {
         };
         this.updateHeaderUserInfo(this.currentUser);
         this.loadInitialContent();
+    },
+    
+    // Show web mode message
+    showWebModeMessage() {
+        console.log('🌐 Showing web mode (no Telegram user data)');
+        this.createDemoUser();
     },
     
     // Load initial content
@@ -423,93 +511,34 @@ window.TeleBlogApp = {
         this.hideLoading();
     },
     
-    // Demo posts for when database is unavailable
-    getDemoPosts() {
-        return [
-            {
-                id: 'demo-1',
-                title: 'Welcome to TeleBlog!',
-                content: 'This is a demo post showing how TeleBlog works. Create your own posts to get started!',
-                excerpt: 'Welcome to our blogging platform',
-                published_at: new Date().toISOString(),
-                user: {
-                    first_name: 'Admin',
-                    username: 'admin',
-                    user_type: 'channel_admin'
-                }
-            },
-            {
-                id: 'demo-2', 
-                title: 'Getting Started Guide',
-                content: 'Learn how to create and share your posts with the TeleBlog community.',
-                excerpt: 'How to use TeleBlog',
-                published_at: new Date(Date.now() - 86400000).toISOString(),
-                user: {
-                    first_name: 'Support',
-                    username: 'support',
-                    user_type: 'group_admin'
-                }
-            }
-        ];
-    },
-    
-    // Navigation function
-    loadPage(page) {
-        console.log('Loading page:', page);
-        this.currentPage = page;
-        
-        const pageContent = document.getElementById('page-content');
-        if (!pageContent) return;
-        
-        switch(page) {
-            case 'feed':
-                this.loadPosts();
-                break;
-            case 'editor':
-                if (this.currentUser?.user_type === 'general') {
-                    this.showNotification('General users cannot create posts yet. Upgrade your account type in profile.', 'error');
-                    return;
-                }
-                pageContent.innerHTML = `
-                    <div class="page-editor">
-                        <h2>Create Post</h2>
-                        <p>Post creation feature coming soon!</p>
-                        <div class="demo-editor">
-                            <input type="text" placeholder="Post title" class="editor-input">
-                            <textarea placeholder="Write your post content..." class="editor-textarea"></textarea>
-                            <button class="btn primary">Publish Post</button>
-                        </div>
-                    </div>
-                `;
-                break;
-            case 'profile':
-                this.showUserProfile();
-                break;
-            default:
-                this.loadPosts();
-        }
-    },
-    
-    // Show user profile with type management
+    // Show user profile with REAL data
     showUserProfile() {
         const pageContent = document.getElementById('page-content');
         if (!pageContent) return;
+        
+        // Use REAL user data from Supabase
+        const user = this.currentUser;
+        const userName = user.first_name || 'User';
+        const userUsername = user.username ? `@${user.username}` : 'No username';
+        const userFullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Not provided';
         
         pageContent.innerHTML = `
             <div class="page-profile">
                 <h2>User Profile</h2>
                 <div class="profile-card">
-                    <div class="profile-avatar">${this.currentUser?.first_name?.charAt(0) || 'U'}</div>
+                    <div class="profile-avatar">${user.first_name?.charAt(0) || user.username?.charAt(0) || 'U'}</div>
                     <div class="profile-info">
-                        <h3>${this.currentUser?.first_name || 'Guest'}</h3>
-                        <p>@${this.currentUser?.username || 'guest'}</p>
-                        <p class="user-type ${this.currentUser?.user_type || 'general'}">
-                            ${this.getUserTypeDisplayName(this.currentUser?.user_type || 'general')}
+                        <h3>${userName}</h3>
+                        <p>${userUsername}</p>
+                        <p><strong>Full Name:</strong> ${userFullName}</p>
+                        <p><strong>Telegram ID:</strong> ${user.telegram_id || 'N/A'}</p>
+                        <p class="user-type ${user.user_type || 'general'}">
+                            ${this.getUserTypeDisplayName(user.user_type || 'general')}
                         </p>
                     </div>
                 </div>
                 
-                ${this.currentUser?.user_type === 'general' ? `
+                ${user.user_type === 'general' ? `
                     <div class="upgrade-section">
                         <h3>Upgrade Your Account</h3>
                         <p>Get access to post creation and advanced features</p>
@@ -542,7 +571,7 @@ window.TeleBlogApp = {
         `;
     },
     
-    // Show notification
+    // Utility functions (keep the same as before)
     showNotification(message, type = 'info') {
         const container = document.getElementById('notification-container');
         if (!container) return;
@@ -556,7 +585,6 @@ window.TeleBlogApp = {
         
         container.appendChild(notification);
         
-        // Auto remove after 5 seconds
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.remove();
@@ -564,7 +592,6 @@ window.TeleBlogApp = {
         }, 5000);
     },
     
-    // Utility functions
     escapeHtml(unsafe) {
         if (!unsafe) return '';
         return unsafe.toString()
@@ -612,11 +639,6 @@ window.TeleBlogApp = {
                 </div>
             `;
         }
-    },
-    
-    showWebModeMessage() {
-        console.log('🌐 Web mode activated');
-        this.createDemoUser();
     }
 };
 

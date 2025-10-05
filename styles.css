@@ -136,6 +136,27 @@ header {
     color: var(--button-text);
 }
 
+
+/* User info summary in enrollment */
+.user-info-summary {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border-left: 4px solid var(--accent-blue);
+}
+
+.user-info-summary p {
+    margin: 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.user-info-summary strong {
+    color: var(--accent-blue);
+}
+
+
+
 #theme-toggle {
   background-color: var(--accent-blue);
   color: var(--button-text);
