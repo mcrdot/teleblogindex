@@ -1,80 +1,81 @@
-# Environment & secrets
+# TeleBlog Lite - GitHub Pages .gitignore
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
 .env
 .env.local
-tokens.txt
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Dependencies
-/node_modules
-
-# Build / cache
-/dist/
-/build/
-*.log
-
-# Backups / test files
-index8.html
-output.doc
-test.html
-test.js
-app-old.js
-tnc.css
-Proj-Structure.txt
-LAST-worker.js-DEPLOYED-ON-CLOUDFL.txt
-app0.js
-
-# OS/editor junk
-.DS_Store
-Thumbs.db
-*.tmp
-
-# Development configs
-config.json
-
-# Telegram bot files
-bot.js
-deploy-bot.js
-
-# ===== ADD THESE NEW ENTRIES =====
-# Editor and IDE
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# Coverage reports
-coverage/
-*.lcov
-.nyc_output
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Cache directories
-.cache/
-.parcel-cache/
-.eslintcache
+# Logs
+logs
+*.log
 
-# Runtime files
+# Runtime data
+pids
 *.pid
 *.seed
 *.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
 .node_repl_history
 
-# Package manager files
-.npm
-.yarn-integrity
-*.tgz
-jspm_packages/
+# Temporary files
+.tmp/
+temp/
 
-# Framework specific
-.next/
-.nuxt/
-.serverless/
-.fusebox/
-.netlify/
-_site/
+# Config files with secrets (if any)
+config.local.js
+secrets.js
 
-# OS specific
-.AppleDouble
-.LSOverride
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*~
-.directory
+# Local development files
+.local/
+dev/
+
+# Backup files
+*.backup
+*.bak
+
+# Package files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Custom
+worker/  # Exclude local worker files since you use Cloudflare
+test/
+debug/
