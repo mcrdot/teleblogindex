@@ -25,14 +25,152 @@ window.TeleBlogApp = {
             // Initialize Supabase
             await this.initializeSupabase();
             
-            // Initialize Telegram and handle user enrollment
-            await this.initializeTelegramAndEnrollUser();
+            // Initialize Telegram and handle user enrollment - UPDATED FLOW
+async initializeTelegramAndEnrollUser() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        try {
+            const tg = window.Telegram.WebApp;
+            console.log('✅ Telegram Web App detected');
+            
+            // Expand the app
+            tg.expand();
+            
+            // Set theme colors
+            tg.setHeaderColor('#ffffff');
+            tg.setBackgroundColor('#ffffff');
+            
+            // DEBUG: Log all available Telegram data
+            console.log('🔍 FULL Telegram WebApp Data:', {
+                initData: tg.initData,
+                initDataUnsafe: tg.initDataUnsafe,
+                platform: tg.platform,
+                version: tg.version,
+                colorScheme: tg.colorScheme
+            });
+            
+            // IMPROVED: Get Telegram user data with multiple fallbacks
+            let telegramUser = null;
+            let telegramUserId = null;
+            
+            // Method 1: Direct user object (most reliable)
+            if (tg.initDataUnsafe?.user) {
+                telegramUser = tg.initDataUnsafe.user;
+                telegramUserId = telegramUser.id;
+                console.log('✅ Found Telegram user via initDataUnsafe.user:', telegramUser);
+            }
+            // Method 2: Parse initData string manually
+            else if (tg.initData) {
+                console.log('🔄 Attempting to parse initData string...');
+                const params = new URLSearchParams(tg.initData);
+                const userParam = params.get('user');
+                if (userParam) {
+                    try {
+                        telegramUser = JSON.parse(decodeURIComponent(userParam));
+                        telegramUserId = telegramUser.id;
+                        console.log('✅ Found Telegram user via initData parsing:', telegramUser);
+                    } catch (e) {
+                        console.error('❌ Failed to parse user from initData:', e);
+                    }
+                }
+            }
+            // Method 3: Check for user in start_param (for deep links)
+            else if (tg.startParam) {
+                console.log('🔄 Checking start_param for user data...');
+                try {
+                    const startData = JSON.parse(decodeURIComponent(tg.startParam));
+                    if (startData.user) {
+                        telegramUser = startData.user;
+                        telegramUserId = telegramUser.id;
+                        console.log('✅ Found Telegram user via startParam:', telegramUser);
+                    }
+                } catch (e) {
+                    console.log('ℹ️ No user data in start_param');
+                }
+            }
+            
+            if (telegramUserId) {
+                console.log('🎯 Telegram User ID confirmed:', telegramUserId);
+                console.log('📝 Telegram User Details:', {
+                    id: telegramUser.id,
+                    username: telegramUser.username,
+                    first_name: telegramUser.first_name,
+                    last_name: telegramUser.last_name
+                });
+                
+                // Check if user exists in database
+                const existingUser = await this.checkUserExistence(telegramUserId);
+                
+                if (existingUser) {
+                    // CASE 1: Existing User - Direct login
+                    console.log('🔄 Processing existing user:', existingUser.username);
+                    await this.handleExistingUser(existingUser);
+                } else {
+                    // CASE 2: New User - Show welcome options
+                    console.log('🆕 Processing new Telegram user');
+                    await this.showWelcomeOptions(telegramUser);
+                }
+            } else {
+                // No Telegram user data - Show detailed error
+                console.error('❌ CRITICAL: No Telegram user data available in any method');
+                console.log('Available data sources:', {
+                    hasInitData: !!tg.initData,
+                    hasInitDataUnsafe: !!tg.initDataUnsafe,
+                    initDataUnsafeKeys: tg.initDataUnsafe ? Object.keys(tg.initDataUnsafe) : [],
+                    startParam: tg.startParam
+                });
+                
+                // Try to load existing session from localStorage as fallback
+                await this.tryLoadExistingSession();
+            }
             
         } catch (error) {
-            console.error('❌ App initialization failed:', error);
-            this.showError('Application failed to load. Please refresh.');
+            console.error('⚠️ Telegram init failed:', error);
+            // Fallback to session loading
+            await this.tryLoadExistingSession();
         }
-    },
+    } else {
+        // Web browser - Guest mode
+        console.log('🌐 Running in web browser mode');
+        this.enterGuestMode();
+    }
+},
+
+// Add this missing function for session fallback
+async tryLoadExistingSession() {
+    try {
+        // Check if we have a stored user ID from previous session
+        const storedUserId = localStorage.getItem('teleblog-user-id');
+        if (storedUserId && window.SupabaseClient) {
+            console.log('🔍 Attempting to load stored user session:', storedUserId);
+            
+            const supabase = window.SupabaseClient.getClient();
+            if (supabase) {
+                const { data: user, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', storedUserId)
+                    .single();
+                
+                if (!error && user) {
+                    console.log('✅ Loaded user from stored session:', user.username);
+                    this.currentUser = user;
+                    this.isGuest = false;
+                    this.updateHeaderUserInfo(this.currentUser);
+                    await this.loadUserContent();
+                    return;
+                }
+            }
+        }
+        
+        // If no stored session, enter guest mode
+        console.log('❌ No existing session found, entering guest mode');
+        this.enterGuestMode();
+        
+    } catch (error) {
+        console.error('❌ Session loading failed:', error);
+        this.enterGuestMode();
+    }
+},
     
     // Initialize Supabase client
     async initializeSupabase() {
@@ -436,36 +574,50 @@ window.TeleBlogApp = {
         }
     },
     
-    // Update user info in header
-    updateHeaderUserInfo(user) {
-        const userInfo = document.getElementById('user-info');
-        if (!userInfo) {
-            console.error('❌ user-info element not found');
-            return;
-        }
+    // Update user info in header - IMPROVED VERSION
+updateHeaderUserInfo(user) {
+    const userInfo = document.getElementById('user-info');
+    if (!userInfo) {
+        console.error('❌ user-info element not found in header');
+        return;
+    }
+
+    console.log('🔄 Updating header with user:', user);
+    
+    if (user.is_guest) {
+        // Guest user display
+        userInfo.innerHTML = `
+            <div class="avatar guest">G</div>
+            <span>Guest <span class="guest-badge">Limited Access</span></span>
+        `;
+        userInfo.title = "Guest User - Limited features";
+    } else {
+        // Member user display - USING REAL DATA FROM DATABASE
+        const displayName = user.first_name || user.username || 'User';
+        const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || displayName;
+        const username = user.username ? `@${user.username}` : 'User';
         
-        if (user.is_guest) {
-            // Guest user display
-            userInfo.innerHTML = `
-                <div class="avatar guest">G</div>
-                <span>Guest <span class="guest-badge">Limited Access</span></span>
-            `;
-            userInfo.title = "Guest User - Limited features";
-        } else {
-            // Member user display
-            const displayName = user.first_name || 'User';
-            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || displayName;
-            const username = user.username ? `@${user.username}` : 'No username';
-            
-            userInfo.innerHTML = `
-                <div class="avatar ${user.user_type}">${displayName.charAt(0).toUpperCase()}</div>
-                <span>${fullName} ${user.user_type !== 'general' ? 
+        // Determine avatar class based on user type
+        const avatarClass = user.user_type === 'group_admin' ? 'group-admin' : 
+                           user.user_type === 'channel_admin' ? 'channel-admin' : '';
+        
+        userInfo.innerHTML = `
+            <div class="avatar ${avatarClass}">${displayName.charAt(0).toUpperCase()}</div>
+            <span>
+                ${fullName} 
+                ${user.user_type !== 'general' ? 
                     `<span class="user-type-badge ${user.user_type}">${this.getUserTypeDisplayName(user.user_type)}</span>` : ''}
-                </span>
-            `;
-            userInfo.title = `Telegram: ${username} | Type: ${this.getUserTypeDisplayName(user.user_type)}`;
-        }
-    },
+            </span>
+        `;
+        userInfo.title = `Telegram: ${username} | Type: ${this.getUserTypeDisplayName(user.user_type)}`;
+        
+        console.log('✅ Header updated with REAL user data:', {
+            username: user.username,
+            first_name: user.first_name,
+            user_type: user.user_type
+        });
+    }
+},
     
     // Display posts with interaction controls
     displayPosts(posts, options = { allowInteractions: true }) {

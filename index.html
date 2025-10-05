@@ -78,6 +78,23 @@
   <script src="app.js"></script>
   <script src="theme.js"></script>
 
+<!-- Temporary debug button - add this somewhere in your HTML -->
+<button onclick="checkTelegramData()" style="position: fixed; top: 10px; right: 10px; z-index: 10000; background: red; color: white; padding: 5px;">DEBUG</button>
+
+<script>
+function checkTelegramData() {
+    if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        alert('Telegram Data:\n' + 
+              'initDataUnsafe: ' + JSON.stringify(tg.initDataUnsafe) + '\n' +
+              'initData: ' + tg.initData + '\n' +
+              'User: ' + JSON.stringify(tg.initDataUnsafe?.user));
+    } else {
+        alert('No Telegram WebApp detected');
+    }
+}
+</script>
+
   <!-- Enhanced initialization -->
   <script>
     // Enhanced environment detection that works with VPN
