@@ -153,6 +153,7 @@ window.TeleBlogApp = {
                     if (!error && user) {
                         console.log('✅ Loaded user from Supabase:', {
                             id: user.id,
+                            telegram_id: user.telegram_id,
                             username: user.username,
                             first_name: user.first_name,
                             last_name: user.last_name,
@@ -489,29 +490,161 @@ window.TeleBlogApp = {
         return types[userType] || 'User';
     },
     
-    // Create demo user for web mode (only when no real user available)
-    createDemoUser() {
-        console.log('🔄 Creating demo user (no real user data available)');
-        this.currentUser = {
-            id: 'demo-user',
-            telegram_id: 0,
-            first_name: 'Guest',
-            username: 'guest',
-            user_type: 'general',
-            profile_completed: true
-        };
-        this.updateHeaderUserInfo(this.currentUser);
-        this.loadInitialContent();
+    // Load initial content after user setup
+    async loadInitialContent() {
+        try {
+            console.log('📦 Loading initial content...');
+            
+            // Load posts based on current page
+            if (this.currentPage === 'feed') {
+                await this.loadPosts();
+            } else if (this.currentPage === 'profile') {
+                this.showUserProfile();
+            } else if (this.currentPage === 'create') {
+                this.showCreatePost();
+            }
+            
+        } catch (error) {
+            console.error('❌ Failed to load initial content:', error);
+            this.showError('Failed to load content.');
+        }
     },
     
-    // Show web mode message
-    showWebModeMessage() {
-        console.log('🌐 Showing web mode (no Telegram user data)');
-        this.createDemoUser();
+    // Load posts from Supabase
+    async loadPosts() {
+        try {
+            this.showLoading('Loading posts...');
+            
+            if (window.SupabaseClient && window.SupabaseClient.getPosts) {
+                const posts = await window.SupabaseClient.getPosts();
+                this.displayPosts(posts);
+            } else {
+                // Fallback: Show demo posts
+                this.displayDemoPosts();
+            }
+        } catch (error) {
+            console.error('❌ Failed to load posts:', error);
+            this.displayDemoPosts();
+        }
     },
     
-    // [Rest of the functions remain the same as previous version...]
-    // loadInitialContent, loadPosts, displayPosts, showUserProfile, etc.
+    // Display posts in the feed
+    displayPosts(posts) {
+        const pageContent = document.getElementById('page-content');
+        if (!pageContent) return;
+        
+        if (!posts || posts.length === 0) {
+            pageContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>No posts yet</h3>
+                    <p>Be the first to create a post!</p>
+                    ${this.currentUser?.user_type !== 'general' ? 
+                        '<button class="btn primary" onclick="TeleBlogApp.showCreatePost()">Create First Post</button>' : 
+                        '<p>Follow groups/channels to see their posts here.</p>'
+                    }
+                </div>
+            `;
+            return;
+        }
+        
+        const postsHtml = posts.map(post => `
+            <div class="post-card" data-post-id="${post.id}">
+                <div class="post-header">
+                    <div class="post-author">
+                        <div class="author-avatar">${post.author_name?.charAt(0) || 'U'}</div>
+                        <div class="author-info">
+                            <strong>${post.author_name || 'Unknown Author'}</strong>
+                            <span class="post-date">${this.formatDate(post.created_at)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>${this.escapeHtml(post.content)}</p>
+                </div>
+                <div class="post-actions">
+                    <button class="btn-like" onclick="TeleBlogApp.likePost('${post.id}')">
+                        ❤️ ${post.likes_count || 0}
+                    </button>
+                    <button class="btn-comment" onclick="TeleBlogApp.showComments('${post.id}')">
+                        💬 ${post.comments_count || 0}
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        pageContent.innerHTML = `
+            <div class="feed-container">
+                <div class="feed-header">
+                    <h2>Latest Posts</h2>
+                    ${this.currentUser?.user_type !== 'general' ? 
+                        '<button class="btn primary" onclick="TeleBlogApp.showCreatePost()">Create Post</button>' : 
+                        ''
+                    }
+                </div>
+                <div class="posts-list">
+                    ${postsHtml}
+                </div>
+            </div>
+        `;
+    },
+    
+    // Show demo posts when no real data available
+    displayDemoPosts() {
+        const pageContent = document.getElementById('page-content');
+        if (!pageContent) return;
+        
+        pageContent.innerHTML = `
+            <div class="feed-container">
+                <div class="feed-header">
+                    <h2>Latest Posts</h2>
+                    ${this.currentUser?.user_type !== 'general' ? 
+                        '<button class="btn primary" onclick="TeleBlogApp.showCreatePost()">Create Post</button>' : 
+                        ''
+                    }
+                </div>
+                <div class="posts-list">
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-avatar">T</div>
+                                <div class="author-info">
+                                    <strong>TeleBlog Team</strong>
+                                    <span class="post-date">Just now</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p>Welcome to TeleBlog! 🎉 This is a demo post. When you have real posts from your groups/channels, they will appear here.</p>
+                        </div>
+                        <div class="post-actions">
+                            <button class="btn-like">❤️ 12</button>
+                            <button class="btn-comment">💬 3</button>
+                        </div>
+                    </div>
+                    
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-avatar">E</div>
+                                <div class="author-info">
+                                    <strong>Example User</strong>
+                                    <span class="post-date">2 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p>This platform connects your Telegram groups and channels to create a unified blogging experience. Start by creating posts from your admin accounts!</p>
+                        </div>
+                        <div class="post-actions">
+                            <button class="btn-like">❤️ 8</button>
+                            <button class="btn-comment">💬 1</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
     
     // Show user profile with REAL data from Supabase
     showUserProfile() {
@@ -570,7 +703,144 @@ window.TeleBlogApp = {
         `;
     },
     
-    // [Other utility functions remain the same...]
+    // Show create post interface
+    showCreatePost() {
+        const pageContent = document.getElementById('page-content');
+        if (!pageContent) return;
+        
+        if (this.currentUser?.user_type === 'general') {
+            pageContent.innerHTML = `
+                <div class="error-message">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Access Restricted</h3>
+                    <p>You need to be a Group Admin or Channel Admin to create posts.</p>
+                    <div class="upgrade-options">
+                        <button class="btn" onclick="TeleBlogApp.selectUserType('group_admin')">
+                            Become Group Admin
+                        </button>
+                        <button class="btn primary" onclick="TeleBlogApp.selectUserType('channel_admin')">
+                            Become Channel Admin
+                        </button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        pageContent.innerHTML = `
+            <div class="create-post-container">
+                <h2>Create New Post</h2>
+                <div class="post-form">
+                    <div class="form-group">
+                        <label for="post-content">Post Content</label>
+                        <textarea 
+                            id="post-content" 
+                            placeholder="What's on your mind? Share with your audience..." 
+                            rows="6"
+                        ></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn" onclick="TeleBlogApp.loadInitialContent()">Cancel</button>
+                        <button class="btn primary" onclick="TeleBlogApp.submitPost()">Publish Post</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    
+    // Submit new post
+    async submitPost() {
+        const contentInput = document.getElementById('post-content');
+        if (!contentInput) return;
+        
+        const content = contentInput.value.trim();
+        if (!content) {
+            this.showNotification('Please enter some content for your post', 'error');
+            return;
+        }
+        
+        try {
+            this.showLoading('Publishing post...');
+            
+            if (window.SupabaseClient && window.SupabaseClient.createPost) {
+                const success = await window.SupabaseClient.createPost({
+                    content: content,
+                    author_id: this.currentUser.id,
+                    author_name: this.currentUser.first_name || this.currentUser.username || 'Unknown'
+                });
+                
+                if (success) {
+                    this.showNotification('Post published successfully!', 'success');
+                    this.currentPage = 'feed';
+                    await this.loadInitialContent();
+                } else {
+                    this.showNotification('Failed to publish post. Please try again.', 'error');
+                }
+            } else {
+                // Fallback for demo
+                this.showNotification('Post published successfully! (Demo)', 'success');
+                this.currentPage = 'feed';
+                await this.loadInitialContent();
+            }
+        } catch (error) {
+            console.error('❌ Failed to submit post:', error);
+            this.showNotification('Failed to publish post. Please try again.', 'error');
+        }
+    },
+    
+    // Like a post
+    async likePost(postId) {
+        console.log('Liking post:', postId);
+        this.showNotification('Post liked!', 'success');
+    },
+    
+    // Show comments for a post
+    async showComments(postId) {
+        console.log('Showing comments for post:', postId);
+        this.showNotification('Comments feature coming soon!', 'info');
+    },
+    
+    // Create demo user for web mode (only when no real user available)
+    createDemoUser() {
+        console.log('🔄 Creating demo user (no real user data available)');
+        this.currentUser = {
+            id: 'demo-user',
+            telegram_id: 0,
+            first_name: 'Guest',
+            username: 'guest',
+            user_type: 'general',
+            profile_completed: true
+        };
+        this.updateHeaderUserInfo(this.currentUser);
+        this.loadInitialContent();
+    },
+    
+    // Show web mode message
+    showWebModeMessage() {
+        console.log('🌐 Showing web mode (no Telegram user data)');
+        this.createDemoUser();
+    },
+    
+    // Navigation functions
+    navigateTo(page) {
+        this.currentPage = page;
+        this.updateNavigation();
+        this.loadInitialContent();
+    },
+    
+    updateNavigation() {
+        // Update active nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        const activeLink = document.querySelector(`[data-page="${this.currentPage}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+    },
+    
+    // Utility functions
     showNotification: function(message, type = 'info') {
         const container = document.getElementById('notification-container');
         if (!container) return;

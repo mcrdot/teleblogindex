@@ -1,4 +1,4 @@
-// scripts/supabase-client.js - COMPLETE VERSION WITH USER TYPE SUPPORT
+// scripts/supabase-client.js - COMPLETE VERSION WITH ALL REQUIRED FUNCTIONS
 let supabaseClient;
 let isInitialized = false;
 let connectionTested = false;
@@ -179,7 +179,7 @@ async function createUser(telegramUser) {
   }
 }
 
-// UPDATE USER TYPE FUNCTION - MISSING IN PREVIOUS VERSION
+// UPDATE USER TYPE FUNCTION - COMPLETE VERSION
 async function updateUserType(userId, userType) {
   if (!supabaseClient && !initSupabase()) {
     console.warn('Supabase not initialized in updateUserType');
@@ -281,10 +281,81 @@ async function getPublishedPosts(limit = 10, offset = 0) {
   }
 }
 
-// Create new post function for future use
+// NEW: Get posts function for app.js compatibility
+async function getPosts(limit = 20) {
+  if (!supabaseClient && !initSupabase()) {
+    console.warn('Supabase not initialized, returning empty array');
+    return [];
+  }
+
+  const connected = await testConnection();
+  if (!connected) {
+    console.warn('No Supabase connection, returning empty array');
+    return [];
+  }
+
+  try {
+    console.log('Fetching posts...');
+    const { data, error } = await supabaseClient
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching posts:', error);
+      return [];
+    }
+
+    console.log(`Loaded ${data?.length || 0} posts`);
+    return data || [];
+  } catch (err) {
+    console.error('Exception in getPosts:', err);
+    return [];
+  }
+}
+
+// NEW: Create post function for app.js compatibility
 async function createPost(postData) {
   if (!supabaseClient && !initSupabase()) {
     console.warn('Supabase not initialized in createPost');
+    return false;
+  }
+
+  const connected = await testConnection();
+  if (!connected) {
+    console.error('No Supabase connection - cannot proceed');
+    return false;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from('posts')
+      .insert({
+        content: postData.content,
+        author_id: postData.author_id,
+        author_name: postData.author_name,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error creating post:', error);
+      return false;
+    }
+
+    console.log('Post created successfully');
+    return true;
+  } catch (err) {
+    console.error('Exception in createPost:', err);
+    return false;
+  }
+}
+
+// NEW: Get user by ID function
+async function getUserById(userId) {
+  if (!supabaseClient && !initSupabase()) {
+    console.warn('Supabase not initialized in getUserById');
     return null;
   }
 
@@ -295,21 +366,21 @@ async function createPost(postData) {
   }
 
   try {
+    console.log(`Fetching user with id: ${userId}`);
     const { data, error } = await supabaseClient
-      .from('posts')
-      .insert(postData)
-      .select()
+      .from('users')
+      .select('*')
+      .eq('id', userId)
       .single();
 
     if (error) {
-      console.error('Error creating post:', error);
+      console.error('Error fetching user by ID:', error);
       return null;
     }
 
-    console.log('Post created successfully:', data.id);
     return data;
   } catch (err) {
-    console.error('Exception in createPost:', err);
+    console.error('Exception in getUserById:', err);
     return null;
   }
 }
@@ -320,9 +391,11 @@ window.SupabaseClient = {
   testConnection,
   getUserByTelegramId,
   createUser,
-  updateUserType, // NOW INCLUDED!
+  updateUserType,
   getPublishedPosts,
-  createPost,
+  getPosts, // NEW: Added for app.js compatibility
+  createPost, // NEW: Updated for app.js compatibility
+  getUserById, // NEW: Added for session loading
   getClient: () => supabaseClient,
   isInitialized: () => isInitialized,
   isConnected: () => connectionTested
