@@ -1255,6 +1255,23 @@ button, input, textarea, .post-card, .menu-btn, .nav-item {
     opacity: 0.9;
 }
 
+/* TEMPORARY NOTIFICATION */
+.temp-notice {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.temp-notice.notification-success {
+    border-left: 4px solid var(--accent-green) !important;
+}
+
+.temp-notice.notification-info {
+    border-left: 4px solid var(--accent-blue) !important;
+}
+
+
 /* Responsive welcome modal */
 @media (max-width: 600px) {
     .welcome-card {
