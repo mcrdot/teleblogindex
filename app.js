@@ -358,33 +358,122 @@ ${tg.initDataUnsafe ? Object.keys(tg.initDataUnsafe).join(', ') : 'NONE'}
         this.displayDemoPosts({ allowInteractions: true });
     },
     
-    // Update header user info
-    updateHeaderUserInfo(user) {
-        const userInfo = document.getElementById('user-info');
-        if (!userInfo) {
-            console.error('❌ user-info element not found');
-            return;
-        }
+// UPDATE HEADER USER INFO - FIXED VERSION
+updateHeaderUserInfo(user) {
+    const userInfo = document.getElementById('user-info');
+    if (!userInfo) {
+        console.error('❌ user-info element not found in header');
+        // Create it if it doesn't exist
+        this.createUserInfoHeader();
+        return;
+    }
+
+    console.log('🔄 Updating header with user:', user);
+
+    if (user.is_guest) {
+        // Guest user display
+        userInfo.innerHTML = `
+            <div class="avatar guest">G</div>
+            <span>Guest <span class="guest-badge">Limited Access</span></span>
+        `;
+        userInfo.title = "Guest User - Limited features";
+        console.log('✅ Header set to GUEST mode');
+    } else {
+        // REAL USER - Get proper data from database
+        const displayName = user.first_name || user.username || 'User';
+        const firstName = user.first_name || '';
+        const lastName = user.last_name || '';
+        const fullName = [firstName, lastName].filter(Boolean).join(' ').trim() || displayName;
+        const username = user.username ? `@${user.username}` : 'User';
         
-        if (user.is_guest) {
-            userInfo.innerHTML = `
-                <div class="avatar guest">G</div>
-                <span>Guest <span class="guest-badge">Limited Access</span></span>
-            `;
-            userInfo.title = "Guest User";
-        } else {
-            const displayName = user.first_name || user.username || 'User';
-            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || displayName;
-            
-            userInfo.innerHTML = `
-                <div class="avatar">${displayName.charAt(0).toUpperCase()}</div>
-                <span>${fullName} <small>(@${user.username})</small></span>
-            `;
-            userInfo.title = `Telegram: @${user.username}`;
-            
-            console.log('✅ Header updated with user:', user.username);
+        // Get first letter for avatar
+        const firstLetter = (user.first_name?.charAt(0) || user.username?.charAt(0) || 'U').toUpperCase();
+        
+        // Determine avatar class based on user type
+        let avatarClass = 'avatar';
+        if (user.user_type === 'group_admin') {
+            avatarClass += ' group-admin';
+        } else if (user.user_type === 'channel_admin') {
+            avatarClass += ' channel-admin';
         }
-    },
+
+        userInfo.innerHTML = `
+            <div class="${avatarClass}">${firstLetter}</div>
+            <span>
+                ${fullName}
+                ${user.user_type !== 'general' ? 
+                    `<span class="user-type-badge ${user.user_type}">${this.getUserTypeDisplayName(user.user_type)}</span>` : ''}
+            </span>
+        `;
+        
+        userInfo.title = `Telegram: ${username} | Name: ${fullName} | Type: ${this.getUserTypeDisplayName(user.user_type)}`;
+        
+        console.log('✅ Header updated with REAL USER data:', {
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            user_type: user.user_type,
+            firstLetter: firstLetter
+        });
+    }
+},
+
+// Create user info header if it doesn't exist
+createUserInfoHeader() {
+    console.log('🔄 Creating user-info header element...');
+    const header = document.querySelector('header');
+    if (!header) return;
+    
+    const userInfo = document.createElement('div');
+    userInfo.id = 'user-info';
+    userInfo.className = 'user-info';
+    userInfo.innerHTML = `
+        <div class="avatar guest">G</div>
+        <span>Guest <span class="guest-badge">Limited Access</span></span>
+    `;
+    
+    // Add to header (usually after logo, before theme toggle)
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        header.insertBefore(userInfo, themeToggle);
+    } else {
+        header.appendChild(userInfo);
+    }
+    
+    console.log('✅ Created user-info header element');
+},
+
+// FORCE TEST: Manually test with your vt_global user
+async testWithRealUser() {
+    console.log('🧪 TEST: Manually loading vt_global user...');
+    
+    // Try to find your user in the database
+    if (window.SupabaseClient) {
+        // First, let's find your user by username
+        const supabase = window.SupabaseClient.getClient();
+        if (supabase) {
+            const { data: users, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('username', 'vt_global')
+                .single();
+            
+            if (!error && users) {
+                console.log('✅ FOUND vt_global user in database:', users);
+                this.currentUser = users;
+                this.isGuest = false;
+                this.updateHeaderUserInfo(users);
+                this.showNotification(`✅ Success! Loaded user: ${users.username}`, 'success');
+                return;
+            } else {
+                console.error('❌ vt_global user not found in database:', error);
+                this.showNotification('❌ vt_global user not found in database', 'error');
+            }
+        }
+    }
+    
+    this.showNotification('❌ Could not load vt_global user', 'error');
+},
     
     // Display demo posts
     displayDemoPosts(options = { allowInteractions: true }) {

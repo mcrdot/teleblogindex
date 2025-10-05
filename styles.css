@@ -111,48 +111,86 @@ header {
     flex-wrap: wrap;
 }
 
-/* User type badges in header */
+
+/* IMPROVED HEADER STYLES */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.user-info:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 16px;
+    border: 2px solid var(--border-color);
+}
+
+.avatar.guest {
+    background: linear-gradient(135deg, #666, #999);
+}
+
+.avatar.group-admin {
+    background: linear-gradient(135deg, var(--accent-green), #2E7D32);
+}
+
+.avatar.channel-admin {
+    background: linear-gradient(135deg, var(--accent-purple), #6A1B9A);
+}
+
+.user-info span {
+    color: var(--text-primary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.guest-badge {
+    background: var(--accent-purple);
+    color: var(--button-text);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
 .user-type-badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
+    padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.7rem;
     font-weight: bold;
     text-transform: uppercase;
 }
 
-.user-type-badge.general {
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
-}
-
 .user-type-badge.group_admin {
-    background-color: var(--accent-green);
-    color: var(--button-text);
+    background: var(--accent-green);
+    color: white;
 }
 
 .user-type-badge.channel_admin {
-    background-color: var(--accent-purple);
-    color: var(--button-text);
+    background: var(--accent-purple);
+    color: white;
 }
 
-/* User info summary in enrollment */
-.user-info-summary {
-    background: var(--bg-secondary);
-    padding: 1rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-    border-left: 4px solid var(--accent-blue);
-}
 
-.user-info-summary p {
-    margin: 0.5rem 0;
-    color: var(--text-primary);
-}
-
-.user-info-summary strong {
-    color: var(--accent-blue);
-}
+/* THEME TOGGLE STYLES */
 
 #theme-toggle {
   background-color: var(--accent-blue);
