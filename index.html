@@ -71,31 +71,42 @@
 
         <!-- Main Content -->
         <main class="app-main">
-            <!-- Home View -->
-            <div id="home-view" class="view active">
-                <div class="welcome-banner">
-                    <h2>Welcome to Your Blogging Space! 🎉</h2>
-                    <p>Share your thoughts, read amazing content, and connect with the Telegram community.</p>
-                </div>
-                
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <h3>📊 Today's Posts</h3>
-                        <p id="today-posts">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>👥 Active Users</h3>
-                        <p id="active-users">0</p>
-                    </div>
-                </div>
 
-                <div class="featured-posts">
-                    <h3>🔥 Featured Posts</h3>
-                    <div id="featured-posts-container">
-                        <!-- Posts will be loaded here -->
-                    </div>
-                </div>
-            </div>
+            <!-- Home View -->
+    <!-- Replace JUST the home-view section in your index.html -->
+<div id="home-view" class="view active">
+    <div class="welcome-banner">
+        <h2>Welcome to TeleBlog Lite! 🎉</h2>
+        <p>Your personal blogging space in Telegram. Share stories, connect with community, and express yourself freely!</p>
+    </div>
+    
+    <div class="scroll-indicator">
+        <span>👇 Scroll down to explore amazing content!</span>
+    </div>
+    
+    <div class="quick-stats">
+        <div class="stat-card">
+            <h3>📊 Live Posts</h3>
+            <p id="today-posts">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>👥 Community</h3>
+            <p id="active-users">New</p>
+        </div>
+    </div>
+
+    <div class="featured-posts">
+        <h3>🔥 Trending Now</h3>
+        <div id="featured-posts-container">
+            <!-- Posts will load here automatically -->
+        </div>
+    </div>
+    
+    <!-- Add a friendly footer -->
+    <div class="app-footer">
+        <p>💫 Start your blogging journey today!</p>
+    </div>
+</div>
 
             <!-- Posts View -->
             <div id="posts-view" class="view">

@@ -1,4 +1,4 @@
-// TeleBlog Lite Main Application
+// TeleBlog Lite Main Application - COMPLETELY FIXED
 class TeleBlogApp {
     constructor() {
         this.currentUser = null;
@@ -12,164 +12,181 @@ class TeleBlogApp {
         if (this.initialized) return;
         
         console.log('🚀 Initializing TeleBlog Lite...');
-        
+        this.showLoadingScreen();
+
+        // Set safety timeout - NEVER get stuck again!
+        const safetyTimeout = setTimeout(() => {
+            console.log('🆘 Safety timeout - forcing app to show');
+            this.showMainApp();
+            this.hideLoadingScreen();
+        }, 4000);
+
         try {
-            // Show loading screen
-            this.showLoadingScreen();
-
-            // Initialize configuration
-            if (!window.AppConfig) {
-                throw new Error('App configuration not loaded');
+            // 1. Initialize Telegram (non-blocking)
+            if (window.TelegramWebApp) {
+                window.TelegramWebApp.init();
+                console.log('💫 Telegram Web App initialized');
             }
 
-            // Initialize Telegram Web App
-            const telegramInitialized = window.TelegramWebApp.init();
-            console.log('Telegram Web App:', telegramInitialized ? 'Initialized' : 'Standalone mode');
-
-            // Initialize Supabase
-            const supabaseClient = window.SupabaseClient.init();
-            if (!supabaseClient) {
-                throw new Error('Failed to initialize Supabase client');
+            // 2. Initialize Supabase (non-blocking)
+            if (window.SupabaseClient) {
+                window.SupabaseClient.init();
+                console.log('🔗 Supabase client initialized');
             }
 
-            // Test database connection
-            const connected = await window.SupabaseClient.testConnection();
-            console.log('Database connection:', connected ? 'Connected' : 'Limited mode');
+            // 3. Quick user setup
+            await this.setupUser();
 
-            // Handle user authentication
-            await this.handleUserAuth();
-
-            // Setup UI
+            // 4. Setup UI immediately
             this.setupEventListeners();
+
+            // 5. Load data in background
             this.loadInitialData();
 
-            // Hide loading screen
-            this.hideLoadingScreen();
-
+            clearTimeout(safetyTimeout);
             this.initialized = true;
             console.log('✅ TeleBlog Lite initialized successfully');
 
         } catch (error) {
-            console.error('❌ Failed to initialize app:', error);
-            this.showError('Initialization failed: ' + error.message);
-            // Still try to show the app
-            this.showMainApp();
-            this.hideLoadingScreen();
+            console.error('❌ Init error:', error);
+            clearTimeout(safetyTimeout);
+        } finally {
+            // ALWAYS hide loading and show app
+            setTimeout(() => {
+                this.hideLoadingScreen();
+                this.showMainApp();
+            }, 1000);
         }
     }
 
-    async handleUserAuth() {
-        const telegramUser = window.TelegramWebApp.getUser();
-        
-        if (telegramUser && window.TelegramWebApp.hasUserData()) {
-            console.log('🔐 Authenticating Telegram user:', telegramUser.id);
+    async setupUser() {
+        try {
+            const telegramUser = window.TelegramWebApp?.getUser?.();
             
-            // Telegram user - get or create in database
-            this.currentUser = await window.SupabaseClient.getUserByTelegramId(telegramUser.id);
-            
-            if (!this.currentUser) {
-                console.log('👤 Creating new user in database');
-                this.currentUser = await window.SupabaseClient.createUser(telegramUser);
-            }
-
-            if (this.currentUser) {
-                console.log('✅ User authenticated:', this.currentUser.id);
+            if (telegramUser?.id) {
+                console.log('👤 Processing Telegram user:', telegramUser.id);
                 
-                if (!this.currentUser.profile_completed) {
-                    this.showAuthScreen();
-                } else {
-                    this.showMainApp();
+                // Try to get existing user (with short timeout)
+                this.currentUser = await Promise.race([
+                    window.SupabaseClient.getUserByTelegramId(telegramUser.id),
+                    new Promise(resolve => setTimeout(() => resolve(null), 1500))
+                ]);
+
+                if (!this.currentUser) {
+                    // Create new user
+                    this.currentUser = await window.SupabaseClient.createUser(telegramUser);
                 }
-            } else {
-                console.warn('⚠️ User authentication failed, continuing as guest');
-                this.currentUser = { id: null, first_name: 'Guest', user_type: 'general' };
-                this.showMainApp();
+
+                if (this.currentUser && !this.currentUser.profile_completed) {
+                    this.showAuthScreen();
+                    return;
+                }
             }
-        } else {
-            // Standalone mode - show main app directly
-            console.log('🌐 Running in standalone mode');
-            this.currentUser = { id: null, first_name: 'Guest', user_type: 'general' };
-            this.showMainApp();
+            
+            // Fallback to guest mode
+            if (!this.currentUser) {
+                this.currentUser = { 
+                    id: null, 
+                    first_name: 'Guest', 
+                    user_type: 'general',
+                    profile_completed: true 
+                };
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ User setup failed, using guest mode:', error);
+            this.currentUser = { 
+                id: null, 
+                first_name: 'Guest', 
+                user_type: 'general',
+                profile_completed: true 
+            };
         }
     }
 
     async loadInitialData() {
         if (this.isLoading) return;
-        
         this.isLoading = true;
-        
+
         try {
-            console.log('📥 Loading initial data...');
-            
-            // Load posts
+            console.log('📥 Loading posts...');
             this.posts = await window.SupabaseClient.getPublishedPosts(5);
-            console.log(`📝 Loaded ${this.posts.length} posts`);
+            console.log(`✅ Loaded ${this.posts.length} posts`);
             
-            // Render posts
             this.renderPosts();
-            
-            // Update user stats
             this.updateUserStats();
-            
-            // Update quick stats
             this.updateQuickStats();
             
         } catch (error) {
-            console.error('Error loading initial data:', error);
+            console.error('📥 Data load error:', error);
+            this.posts = [];
         } finally {
             this.isLoading = false;
         }
     }
 
-    // UI Management
+    // 🎯 UI MANAGEMENT - SMOOTH & RELIABLE
     showLoadingScreen() {
-        document.getElementById('loading-screen').classList.add('active');
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.add('hidden');
+        this.setScreen('loading-screen');
     }
 
     hideLoadingScreen() {
-        document.getElementById('loading-screen').classList.remove('active');
+        const loader = document.getElementById('loading-screen');
+        if (loader) loader.classList.remove('active');
     }
 
     showAuthScreen() {
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
+        this.setScreen('auth-screen');
     }
 
     showMainApp() {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
+        this.setScreen('main-app');
         this.updateUserGreeting();
+        this.renderPosts(); // Ensure posts are shown
+    }
+
+    setScreen(screenName) {
+        // Hide all screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.add('hidden');
+            screen.classList.remove('active');
+        });
+        
+        // Show target screen
+        const targetScreen = document.getElementById(screenName);
+        if (targetScreen) {
+            targetScreen.classList.remove('hidden');
+            targetScreen.classList.add('active');
+        }
     }
 
     updateUserGreeting() {
         const greeting = document.getElementById('user-greeting');
         if (greeting && this.currentUser) {
-            const name = this.currentUser.first_name || this.currentUser.username || 'User';
+            const name = this.currentUser.first_name || this.currentUser.username || 'Friend';
             greeting.textContent = `Hello, ${name}!`;
         }
     }
 
-    // Post Management
+    // ✨ POST MANAGEMENT
     async createPost(postData) {
-        if (!this.currentUser || !this.currentUser.id) {
-            this.showError('Please log in to create posts');
+        if (!this.currentUser?.id) {
+            this.showAlert('Please log in to create posts');
             return false;
         }
 
-        if (!postData.content || postData.content.trim().length === 0) {
-            this.showError('Post content cannot be empty');
+        if (!postData.title?.trim()) {
+            this.showAlert('Post title is required');
             return false;
         }
 
-        if (!postData.title || postData.title.trim().length === 0) {
-            this.showError('Post title is required');
+        if (!postData.content?.trim()) {
+            this.showAlert('Post content cannot be empty');
             return false;
         }
 
         try {
-            this.showLoading('Creating post...');
+            this.showLoading('Creating your post...');
 
             const result = await window.SupabaseClient.createPost({
                 title: postData.title.trim(),
@@ -180,7 +197,7 @@ class TeleBlogApp {
             });
 
             if (result.success) {
-                this.showSuccess('🎉 Post created successfully!');
+                this.showAlert('🎉 Post published successfully!');
                 await this.loadInitialData();
                 this.switchView('posts');
                 return true;
@@ -189,15 +206,15 @@ class TeleBlogApp {
             }
 
         } catch (error) {
-            console.error('Error creating post:', error);
-            this.showError('Failed to create post: ' + error.message);
+            console.error('Post creation error:', error);
+            this.showAlert('Failed to create post: ' + error.message);
             return false;
         } finally {
             this.hideLoading();
         }
     }
 
-    // Rendering
+    // 🎨 RENDERING - BEAUTIFUL & ENGAGING
     renderPosts() {
         const container = document.getElementById('posts-container');
         const featuredContainer = document.getElementById('featured-posts-container');
@@ -208,7 +225,10 @@ class TeleBlogApp {
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>No posts yet</h3>
-                    <p>Be the first to share something amazing!</p>
+                    <p>Be the first to share something amazing! ✨</p>
+                    <button class="cta-button" onclick="window.teleBlogApp.switchView('create')">
+                        Create First Post
+                    </button>
                 </div>
             `;
             
@@ -224,68 +244,76 @@ class TeleBlogApp {
 
         // Render main posts
         container.innerHTML = this.posts.map(post => `
-            <div class="post-card">
+            <div class="post-card" onclick="this.classList.toggle('expanded')">
                 <div class="post-header">
                     <span class="author">
                         ${post.user ? post.user.first_name : (post.author_name || 'Anonymous')}
-                        ${post.user && post.user.user_type ? `<span class="user-type">${post.user.user_type}</span>` : ''}
+                        ${post.user?.user_type ? `<span class="user-type">${post.user.user_type}</span>` : ''}
                     </span>
                     <span class="date">${this.formatDate(post.published_at || post.created_at)}</span>
                 </div>
                 <h3 class="post-title">${this.escapeHtml(post.title)}</h3>
                 ${post.excerpt ? `<div class="post-excerpt">${this.escapeHtml(post.excerpt)}</div>` : ''}
                 <div class="post-content">${this.escapeHtml(post.content)}</div>
-                ${post.tags && post.tags.length > 0 ? `
+                ${post.tags?.length > 0 ? `
                     <div class="post-tags">
-                        ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        ${post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
                     </div>
                 ` : ''}
-                ${post.view_count !== undefined ? `<div class="post-stats">👁️ ${post.view_count} views</div>` : ''}
+                ${post.view_count !== undefined ? `
+                    <div class="post-stats">
+                        <span>👁️ ${post.view_count} views</span>
+                        <span class="read-more">Tap to expand</span>
+                    </div>
+                ` : ''}
             </div>
         `).join('');
 
-        // Render featured posts (first 3)
+        // Render featured posts
         if (featuredContainer) {
             const featuredPosts = this.posts.slice(0, 3);
             featuredContainer.innerHTML = featuredPosts.map(post => `
                 <div class="featured-post">
                     <h4>${this.escapeHtml(post.title)}</h4>
-                    <p>${this.escapeHtml(post.excerpt || post.content.substring(0, 100) + '...')}</p>
-                    <small>By ${post.user ? post.user.first_name : 'Anonymous'}</small>
+                    <p class="featured-excerpt">${this.escapeHtml(post.excerpt || post.content.substring(0, 120) + '...')}</p>
+                    <div class="featured-meta">
+                        <small>By ${post.user ? post.user.first_name : 'Anonymous'}</small>
+                        <small>${this.formatDate(post.published_at || post.created_at)}</small>
+                    </div>
                 </div>
             `).join('');
         }
     }
 
     updateUserStats() {
-        if (this.currentUser && this.currentUser.id) {
+        if (this.currentUser?.id) {
             window.SupabaseClient.getUserPosts(this.currentUser.id).then(posts => {
-                const totalPosts = posts.length;
-                const publishedPosts = posts.filter(p => p.is_published).length;
-                const draftPosts = totalPosts - publishedPosts;
+                const total = posts.length;
+                const published = posts.filter(p => p.is_published).length;
+                const drafts = total - published;
 
-                document.getElementById('total-posts').textContent = totalPosts;
-                document.getElementById('published-posts').textContent = publishedPosts;
-                document.getElementById('draft-posts').textContent = draftPosts;
+                document.getElementById('total-posts').textContent = total;
+                document.getElementById('published-posts').textContent = published;
+                document.getElementById('draft-posts').textContent = drafts;
                 
                 // Update profile info
-                document.getElementById('profile-name').textContent = 
-                    this.currentUser.first_name || this.currentUser.username || 'User';
-                document.getElementById('profile-type').textContent = 
-                    `User Type: ${this.currentUser.user_type || 'general'}`;
-                document.getElementById('profile-stats').textContent = 
-                    `Posts: ${publishedPosts} published, ${draftPosts} drafts`;
+                const profileName = document.getElementById('profile-name');
+                const profileType = document.getElementById('profile-type');
+                const profileStats = document.getElementById('profile-stats');
+                
+                if (profileName) profileName.textContent = this.currentUser.first_name || this.currentUser.username || 'User';
+                if (profileType) profileType.textContent = `User Type: ${this.currentUser.user_type || 'general'}`;
+                if (profileStats) profileStats.textContent = `Posts: ${published} published, ${drafts} drafts`;
             });
         }
     }
 
     updateQuickStats() {
-        // Simple stats - you can enhance this later
         document.getElementById('today-posts').textContent = this.posts.length;
-        document.getElementById('active-users').textContent = this.posts.length > 0 ? 'Growing' : '0';
+        document.getElementById('active-users').textContent = this.posts.length > 0 ? 'Growing' : 'New';
     }
 
-    // Event Handlers
+    // 🎮 EVENT HANDLERS - SMOOTH INTERACTIONS
     setupEventListeners() {
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -312,52 +340,40 @@ class TeleBlogApp {
             });
         }
 
-        // Character count for post content
+        // Character counter with visual feedback
         const postContent = document.getElementById('post-content');
         if (postContent) {
             postContent.addEventListener('input', (e) => {
                 const count = e.target.value.length;
-                document.getElementById('char-count').textContent = count;
+                const counter = document.getElementById('char-count');
+                if (counter) counter.textContent = count;
                 
                 // Visual feedback
                 if (count > 4000) {
-                    e.target.style.borderColor = 'var(--danger-color)';
+                    e.target.classList.add('error');
                 } else if (count > 3500) {
-                    e.target.style.borderColor = 'var(--warning-color)';
+                    e.target.classList.add('warning');
                 } else {
-                    e.target.style.borderColor = '';
+                    e.target.classList.remove('error', 'warning');
                 }
             });
         }
 
-        // Draft button
-        const draftBtn = document.getElementById('draft-btn');
-        if (draftBtn) {
-            draftBtn.addEventListener('click', () => {
-                this.showInfo('Draft feature coming soon!');
-            });
-        }
-
-        // Profile buttons
-        document.getElementById('edit-profile-btn')?.addEventListener('click', () => {
-            this.showInfo('Profile editing coming soon!');
-        });
-
+        // Profile actions
         document.getElementById('change-type-btn')?.addEventListener('click', () => {
             this.showAuthScreen();
         });
 
-        document.getElementById('my-posts-btn')?.addEventListener('click', () => {
-            this.showInfo('My posts view coming soon!');
-        });
-
-        document.getElementById('settings-btn')?.addEventListener('click', () => {
-            this.showInfo('Settings coming soon!');
-        });
+        // Add click handlers for empty state CTA
+        setTimeout(() => {
+            document.querySelector('.cta-button')?.addEventListener('click', () => {
+                this.switchView('create');
+            });
+        }, 1000);
     }
 
     async selectUserType(userType) {
-        if (!this.currentUser || !this.currentUser.id) {
+        if (!this.currentUser?.id) {
             this.showMainApp();
             return;
         }
@@ -370,38 +386,38 @@ class TeleBlogApp {
             if (success) {
                 this.currentUser.user_type = userType;
                 this.currentUser.profile_completed = true;
-                this.showSuccess('Profile setup complete!');
+                this.showAlert('🎉 Profile setup complete!');
                 this.showMainApp();
             } else {
                 throw new Error('Failed to update user type');
             }
             
         } catch (error) {
-            console.error('Error selecting user type:', error);
-            this.showError('Failed to set user type');
-            this.showMainApp(); // Continue anyway
+            console.error('User type selection error:', error);
+            this.showAlert('Failed to set user type');
+            this.showMainApp();
         } finally {
             this.hideLoading();
         }
     }
 
     async handlePostSubmit() {
-        const title = document.getElementById('post-title').value.trim();
-        const content = document.getElementById('post-content').value.trim();
-        const tags = document.getElementById('post-tags').value.trim();
+        const title = document.getElementById('post-title')?.value.trim();
+        const content = document.getElementById('post-content')?.value.trim();
+        const tags = document.getElementById('post-tags')?.value.trim();
 
         if (!title) {
-            this.showError('Please enter a title for your post');
+            this.showAlert('Please enter a title for your post');
             return;
         }
 
         if (!content) {
-            this.showError('Please enter some content for your post');
+            this.showAlert('Please enter some content for your post');
             return;
         }
 
         if (content.length > 4000) {
-            this.showError('Post content cannot exceed 4000 characters');
+            this.showAlert('Post content cannot exceed 4000 characters');
             return;
         }
 
@@ -413,7 +429,7 @@ class TeleBlogApp {
 
         if (success) {
             // Clear form
-            document.getElementById('post-form').reset();
+            document.getElementById('post-form')?.reset();
             document.getElementById('char-count').textContent = '0';
         }
     }
@@ -439,42 +455,41 @@ class TeleBlogApp {
         }
     }
 
-    // Utility Methods
+    // 💫 UTILITY METHODS
     showLoading(message = 'Loading...') {
         this.isLoading = true;
-        // You can implement a proper loading indicator here
-        console.log('Loading:', message);
+        // Simple loading indicator
+        console.log('⏳', message);
     }
 
     hideLoading() {
         this.isLoading = false;
     }
 
-    showError(message) {
-        console.error('App Error:', message);
-        window.TelegramWebApp.showAlert(message);
-    }
-
-    showSuccess(message) {
-        console.log('Success:', message);
-        window.TelegramWebApp.showAlert(message);
-    }
-
-    showInfo(message) {
-        console.log('Info:', message);
-        window.TelegramWebApp.showAlert(message);
+    showAlert(message) {
+        console.log('💬', message);
+        if (window.TelegramWebApp?.showAlert) {
+            window.TelegramWebApp.showAlert(message);
+        } else {
+            alert(message);
+        }
     }
 
     formatDate(dateString) {
-        if (!dateString) return '';
+        if (!dateString) return 'Recently';
         try {
             const date = new Date(dateString);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Yesterday';
+            if (days < 7) return `${days} days ago`;
+            
+            return date.toLocaleDateString();
         } catch (e) {
-            return 'Recent';
+            return 'Recently';
         }
     }
 
@@ -490,9 +505,25 @@ class TeleBlogApp {
     }
 }
 
-// Initialize app when DOM is ready
+// 🎉 INITIALIZATION - BULLETPROOF
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOM loaded, starting TeleBlog Lite...');
+    console.log('💖 TeleBlog Lite - DOM Ready!');
+    
     window.teleBlogApp = new TeleBlogApp();
-    window.teleBlogApp.init();
+    
+    // Start initialization (non-blocking)
+    setTimeout(() => {
+        window.teleBlogApp.init().catch(error => {
+            console.error('💥 Init failed:', error);
+            window.teleBlogApp.showMainApp();
+        });
+    }, 100);
+    
+    // Ultimate fallback - ALWAYS show app within 5 seconds
+    setTimeout(() => {
+        if (!window.teleBlogApp.initialized) {
+            console.log('🆘 Ultimate fallback activated!');
+            window.teleBlogApp.showMainApp();
+        }
+    }, 5000);
 });
