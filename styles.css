@@ -86,6 +86,11 @@ body {
     color: #d9cbca;
 }
 
+.logo {
+    height: 40px; /* Adjust as needed */
+    width: auto;
+}
+
 .user-menu {
     display: flex;
     align-items: center;
