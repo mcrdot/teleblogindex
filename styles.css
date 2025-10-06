@@ -7,18 +7,28 @@ body {
     padding: 0;
 }
 
+/* Ensure proper screen visibility */
 .screen {
     min-height: 100vh;
-    display: flex;
+    display: none;
     flex-direction: column;
 }
 
 .screen.hidden {
-    display: none;
+    display: none !important;
 }
 
 .screen.active {
-    display: flex;
+    display: flex !important;
+}
+
+/* Make sure main app is visible when active */
+#main-app.active {
+    display: flex !important;
+}
+
+#loading-screen.active {
+    display: flex !important;
 }
 
 /* Simple Loading */
@@ -133,3 +143,5 @@ body {
 .post-content {
     line-height: 1.5;
 }
+
+
