@@ -1,112 +1,77 @@
-// TeleBlog Lite - WORKING Simple Version
+// Modern Single Page App
 class TeleBlogApp {
     constructor() {
-        this.currentUser = { first_name: 'Guest' };
-        this.currentView = 'home';
+        this.currentSection = 'home';
+        this.currentUser = null;
         this.posts = [];
+        this.init();
     }
 
     async init() {
-        console.log('🌱 Baby TeleBlog waking up...');
+        console.log('🚀 Initializing Modern TeleBlog...');
         
-        // Show loading screen first
-        this.showScreen('loading-screen');
+        // Initialize components
+        this.setupNavigation();
+        this.setupEventListeners();
+        this.loadUserData();
+        this.loadPosts();
         
-        // Gentle initialization with delay
-        setTimeout(() => {
-            this.setupUser();
-            this.showScreen('main-app');
-            this.setupEventListeners();
-            this.loadSamplePosts();
-        }, 2000);
+        // Hide loading
+        this.hideLoading();
     }
 
-    setupUser() {
-        // Simple user setup
-        document.getElementById('user-greeting').textContent = 
-            `Hello, ${this.currentUser.first_name}!`;
-    }
-
-    showScreen(screenName) {
-        console.log('🖥️ Showing screen:', screenName);
-        
-        // Hide all screens
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-            screen.classList.add('hidden');
+    setupNavigation() {
+        // Handle hash changes for SPA navigation
+        window.addEventListener('hashchange', () => {
+            this.handleRouteChange();
         });
-        
-        // Show target screen
-        const targetScreen = document.getElementById(screenName);
-        if (targetScreen) {
-            targetScreen.classList.remove('hidden');
-            targetScreen.classList.add('active');
-        }
+
+        // Handle initial route
+        this.handleRouteChange();
     }
 
-    loadSamplePosts() {
-        // Simple sample posts
-        this.posts = [{
-            title: 'Welcome to TeleBlog Lite! 🌟',
-            content: 'This is your friendly blogging space in Telegram. Start writing and share your thoughts with the world!',
-            author_name: 'TeleBlog Team',
-            created_at: new Date().toISOString()
-        }, {
-            title: 'Getting Started Guide',
-            content: 'Click the "Create" button to write your first post. You can share stories, ideas, or anything you love!',
-            author_name: 'TeleBlog Team', 
-            created_at: new Date().toISOString()
-        }];
-        
-        this.renderPosts();
+    handleRouteChange() {
+        const hash = window.location.hash.substring(1) || 'home';
+        this.showSection(hash);
     }
 
-    renderPosts() {
-        const container = document.getElementById('posts-container');
-        const featuredContainer = document.getElementById('featured-posts-container');
+    showSection(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Update navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Show target section
+        const targetSection = document.getElementById(sectionId);
+        const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
         
-        if (!container) return;
-
-        // Render main posts
-        container.innerHTML = this.posts.map(post => `
-            <div class="post-card">
-                <div class="post-header">
-                    <span class="author">${post.author_name}</span>
-                    <span class="date">Today</span>
-                </div>
-                <h3 class="post-title">${post.title}</h3>
-                <div class="post-content">${post.content}</div>
-            </div>
-        `).join('');
-
-        // Render featured posts (first one)
-        if (featuredContainer && this.posts.length > 0) {
-            featuredContainer.innerHTML = `
-                <div class="featured-post">
-                    <h4>${this.posts[0].title}</h4>
-                    <p>${this.posts[0].content.substring(0, 100)}...</p>
-                    <small>By ${this.posts[0].author_name}</small>
-                </div>
-            `;
+        if (targetSection && targetNav) {
+            targetSection.classList.add('active');
+            targetNav.classList.add('active');
+            this.currentSection = sectionId;
         }
     }
 
     setupEventListeners() {
-        console.log('🎮 Setting up event listeners...');
-        
-        // Navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const view = e.target.dataset.view;
-                this.switchView(view);
+        // Navigation clicks
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                window.location.hash = section;
             });
         });
 
-        // User type selection
-        document.querySelectorAll('.user-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const userType = e.target.closest('.user-type-btn').dataset.type;
-                this.selectUserType(userType);
+        // CTA buttons
+        document.querySelectorAll('[data-section]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.dataset.section;
+                window.location.hash = section;
             });
         });
 
@@ -118,62 +83,153 @@ class TeleBlogApp {
                 this.handlePostSubmit();
             });
         }
+
+        // Character counter
+        const postContent = document.getElementById('post-content');
+        if (postContent) {
+            postContent.addEventListener('input', () => {
+                this.updateCharCounter();
+            });
+        }
     }
 
-    switchView(viewName) {
-        console.log('🔄 Switching to view:', viewName);
-        
-        // Update navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.view === viewName);
-        });
+    async loadUserData() {
+        // Simulate user loading
+        this.currentUser = {
+            name: 'TeleBlog User',
+            type: 'Blogger',
+            stats: {
+                total: 0,
+                published: 0,
+                drafts: 0
+            }
+        };
 
-        // Update views
-        document.querySelectorAll('.view').forEach(view => {
-            view.classList.toggle('active', view.id === `${viewName}-view`);
-        });
-
-        this.currentView = viewName;
+        this.updateUserUI();
     }
 
-    selectUserType(userType) {
-        console.log('👤 Selected user type:', userType);
-        this.currentUser.user_type = userType;
-        this.showScreen('main-app');
-        alert(`Welcome as ${userType}! 🎉`);
+    async loadPosts() {
+        // Simulate posts loading
+        this.posts = [
+            {
+                title: 'Welcome to TeleBlog!',
+                excerpt: 'Start your blogging journey with us...',
+                author: 'TeleBlog Team',
+                date: new Date().toISOString()
+            }
+        ];
+
+        this.renderPosts();
+        this.updateStats();
     }
 
-    handlePostSubmit() {
-        const title = document.getElementById('post-title')?.value;
-        const content = document.getElementById('post-content')?.value;
-        
+    updateUserUI() {
+        const greeting = document.getElementById('user-greeting');
+        const profileName = document.getElementById('profile-name');
+        const profileType = document.getElementById('profile-type');
+        const profileStats = document.getElementById('profile-stats');
+
+        if (this.currentUser) {
+            if (greeting) greeting.textContent = `Hello, ${this.currentUser.name}!`;
+            if (profileName) profileName.textContent = this.currentUser.name;
+            if (profileType) profileType.textContent = this.currentUser.type;
+            if (profileStats) {
+                profileStats.textContent = `${this.currentUser.stats.published} posts published`;
+            }
+        }
+    }
+
+    renderPosts() {
+        const featuredContainer = document.getElementById('featured-posts');
+        const postsFeed = document.getElementById('posts-feed');
+
+        if (featuredContainer && this.posts.length > 0) {
+            featuredContainer.innerHTML = this.posts.map(post => `
+                <div class="post-card">
+                    <div class="post-header">
+                        <span class="post-author">${post.author}</span>
+                        <span class="post-date">${this.formatDate(post.date)}</span>
+                    </div>
+                    <h3 class="post-title">${post.title}</h3>
+                    <p class="post-excerpt">${post.excerpt}</p>
+                </div>
+            `).join('');
+        }
+
+        if (postsFeed) {
+            postsFeed.innerHTML = this.posts.length > 0 ? 
+                this.posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <span class="post-author">${post.author}</span>
+                            <span class="post-date">${this.formatDate(post.date)}</span>
+                        </div>
+                        <h3 class="post-title">${post.title}</h3>
+                        <p class="post-excerpt">${post.excerpt}</p>
+                    </div>
+                `).join('') :
+                '<div class="empty-state">No posts yet. Be the first to write!</div>';
+        }
+    }
+
+    updateStats() {
+        const livePosts = document.getElementById('live-posts');
+        const totalPosts = document.getElementById('total-posts');
+        const publishedPosts = document.getElementById('published-posts');
+        const draftPosts = document.getElementById('draft-posts');
+
+        if (livePosts) livePosts.textContent = this.posts.length;
+        if (totalPosts) totalPosts.textContent = this.posts.length;
+        if (publishedPosts) publishedPosts.textContent = this.posts.length;
+        if (draftPosts) draftPosts.textContent = '0';
+    }
+
+    updateCharCounter() {
+        const content = document.getElementById('post-content');
+        const counter = document.getElementById('char-count');
+        if (content && counter) {
+            counter.textContent = content.value.length;
+        }
+    }
+
+    async handlePostSubmit() {
+        const title = document.getElementById('post-title').value;
+        const content = document.getElementById('post-content').value;
+        const tags = document.getElementById('post-tags').value;
+
         if (!title || !content) {
-            alert('Please fill in both title and content! 📝');
+            alert('Please fill in both title and content!');
             return;
         }
+
+        this.showLoading();
         
-        alert('Post created successfully! 🎉\n\nTitle: ' + title + '\nContent: ' + content.substring(0, 50) + '...');
-        
-        // Clear form
-        document.getElementById('post-form').reset();
+        // Simulate API call
+        setTimeout(() => {
+            this.hideLoading();
+            alert('Post published successfully! 🎉');
+            document.getElementById('post-form').reset();
+            this.updateCharCounter();
+            window.location.hash = 'posts';
+        }, 1000);
+    }
+
+    showLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('active');
+    }
+
+    hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString();
     }
 }
 
-// Simple and reliable startup
+// Initialize the modern app
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('💖 DOM ready - Starting TeleBlog Lite...');
     window.teleBlogApp = new TeleBlogApp();
-    window.teleBlogApp.init();
-    
-    // Safety net - always show main app after 5 seconds
-    setTimeout(() => {
-        const mainApp = document.getElementById('main-app');
-        const loadingScreen = document.getElementById('loading-screen');
-        
-        if (loadingScreen.classList.contains('active')) {
-            console.log('🆘 Safety net activated - forcing main app');
-            loadingScreen.classList.remove('active');
-            mainApp.classList.add('active');
-        }
-    }, 5000);
 });

@@ -3,231 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleBlog Lite - Telegram Blogging Platform</title>
+    <title>TeleBlog Lite - Modern Blogging</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-    /* 🚨 EMERGENCY LIGHT THEME - INLINE STYLES */
-    body {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-    
-    #main-app, #auth-screen, #loading-screen {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-    
-    .screen {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-    
-    .view {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-    
-    .post-card, .stat-card, .featured-post {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border-color: #dee2e6 !important;
-    }
-</style>
-
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="screen active">
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <h2>TeleBlog Lite</h2>
-            <p>Loading your blogging experience...</p>
-        </div>
-    </div>
-
-    <!-- Auth Screen - User Type Selection -->
-    <div id="auth-screen" class="screen hidden">
-        <div class="auth-container">
-            <h2>Welcome to TeleBlog Lite! 👋</h2>
-            <p>Choose how you'll use our platform:</p>
-            
-            <div class="user-type-options">
-                <button class="user-type-btn" data-type="general">
-                    <div class="icon">👤</div>
-                    <h3>General User</h3>
-                    <p>Read articles, write posts, engage with community</p>
-                </button>
-                
-                <button class="user-type-btn" data-type="group_admin">
-                    <div class="icon">👥</div>
-                    <h3>Group Admin</h3>
-                    <p>Manage group content, share with members</p>
-                </button>
-                
-                <button class="user-type-btn" data-type="channel_admin">
-                    <div class="icon">📢</div>
-                    <h3>Channel Admin</h3>
-                    <p>Broadcast content, grow your audience</p>
-                </button>
-            </div>
-            
-            <p class="note">You can change this later in settings</p>
-        </div>
-    </div>
-
-    <!-- Main App Screen -->
-    <div id="main-app" class="screen hidden">
-        <!-- Header -->
+    <!-- Modern Single Page Layout -->
+    <div class="app-container">
+        <!-- Header - Fixed -->
         <header class="app-header">
             <div class="header-content">
-                <h1>TeleBlog Lite</h1>
+                <h1 class="app-logo">TeleBlog</h1>
                 <div class="user-menu">
-                    <span id="user-greeting">Welcome!</span>
-                    <button id="menu-btn">☰</button>
+                    <span class="user-greeting" id="user-greeting">Hello!</span>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="theme-toggle">🌙</button>
+                        <button class="icon-btn" id="menu-toggle">☰</button>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- Navigation -->
-        <nav class="app-nav">
-            <button class="nav-btn active" data-view="home">🏠 Home</button>
-            <button class="nav-btn" data-view="posts">📚 Posts</button>
-            <button class="nav-btn" data-view="create">✍️ Create</button>
-            <button class="nav-btn" data-view="profile">👤 Profile</button>
+        <!-- Main Navigation - Fixed -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <a href="#home" class="nav-item active" data-section="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="#posts" class="nav-item" data-section="posts">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">Posts</span>
+                </a>
+                <a href="#create" class="nav-item" data-section="create">
+                    <span class="nav-icon">✍️</span>
+                    <span class="nav-text">Create</span>
+                </a>
+                <a href="#profile" class="nav-item" data-section="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profile</span>
+                </a>
+            </div>
         </nav>
 
-        <!-- Main Content -->
+        <!-- Main Content - Dynamic Sections -->
         <main class="app-main">
+            <!-- Home Section -->
+            <section id="home" class="content-section active">
+                <div class="hero-banner">
+                    <h2>Welcome to TeleBlog</h2>
+                    <p>Your modern blogging space in Telegram</p>
+                    <button class="cta-button" data-section="create">Start Writing</button>
+                </div>
 
-            <!-- Home View -->
-    <!-- Replace JUST the home-view section in your index.html -->
-<div id="home-view" class="view active">
-    <div class="welcome-banner">
-        <h2>Welcome to TeleBlog Lite! 🎉</h2>
-        <p>Your personal blogging space in Telegram. Share stories, connect with community, and express yourself freely!</p>
-    </div>
-    
-    <div class="scroll-indicator">
-        <span>👇 Scroll down to explore amazing content!</span>
-    </div>
-    
-    <div class="quick-stats">
-        <div class="stat-card">
-            <h3>📊 Live Posts</h3>
-            <p id="today-posts">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>👥 Community</h3>
-            <p id="active-users">New</p>
-        </div>
-    </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <h3>Live Posts</h3>
+                            <p class="stat-number" id="live-posts">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3>Community</h3>
+                            <p class="stat-number" id="community-count">New</p>
+                        </div>
+                    </div>
+                </div>
 
-    <div class="featured-posts">
-        <h3>🔥 Trending Now</h3>
-        <div id="featured-posts-container">
-            <!-- Posts will load here automatically -->
-        </div>
-    </div>
-    
-    <!-- Add a friendly footer -->
-    <div class="app-footer">
-        <p>💫 Start your blogging journey today!</p>
-    </div>
-</div>
+                <div class="featured-section">
+                    <h3 class="section-title">Trending Now</h3>
+                    <div class="posts-grid" id="featured-posts">
+                        <!-- Dynamic featured posts -->
+                    </div>
+                </div>
+            </section>
 
-            <!-- Posts View -->
-            <div id="posts-view" class="view">
-                <div class="view-header">
-                    <h2>📚 All Posts</h2>
-                    <div class="view-controls">
-                        <select id="posts-filter">
+            <!-- Posts Section -->
+            <section id="posts" class="content-section">
+                <div class="section-header">
+                    <h2>All Posts</h2>
+                    <div class="filter-controls">
+                        <select class="filter-select" id="posts-filter">
                             <option value="latest">Latest</option>
                             <option value="popular">Popular</option>
                             <option value="featured">Featured</option>
                         </select>
                     </div>
                 </div>
-                <div id="posts-container">
-                    <!-- Posts will be loaded here -->
+                <div class="posts-feed" id="posts-feed">
+                    <!-- Dynamic posts feed -->
                 </div>
-            </div>
+            </section>
 
-            <!-- Create Post View -->
-            <div id="create-view" class="view">
+            <!-- Create Section -->
+            <section id="create" class="content-section">
                 <div class="create-container">
-                    <h2>✍️ Create New Post</h2>
-                    <form id="post-form">
+                    <h2>Create New Post</h2>
+                    <form class="post-form" id="post-form">
                         <div class="form-group">
-                            <label for="post-title">Title *</label>
-                            <input type="text" id="post-title" placeholder="Give your post a title..." required>
+                            <input type="text" class="form-input" id="post-title" 
+                                   placeholder="Post title..." required>
                         </div>
-                        
                         <div class="form-group">
-                            <label for="post-content">Content *</label>
-                            <textarea id="post-content" placeholder="Share your thoughts..." required maxlength="4000"></textarea>
-                            <div class="char-count">
-                                <span id="char-count">0</span>/4000 characters
+                            <textarea class="form-textarea" id="post-content" 
+                                      placeholder="Share your thoughts..." 
+                                      maxlength="4000" required></textarea>
+                            <div class="char-counter">
+                                <span id="char-count">0</span>/4000
                             </div>
                         </div>
-
                         <div class="form-group">
-                            <label for="post-tags">Tags (Optional)</label>
-                            <input type="text" id="post-tags" placeholder="technology, blogging, tips...">
-                            <small>Separate tags with commas</small>
+                            <input type="text" class="form-input" id="post-tags" 
+                                   placeholder="Add tags (comma separated)">
                         </div>
-
                         <div class="form-actions">
-                            <button type="button" id="draft-btn">Save Draft</button>
-                            <button type="submit" id="publish-btn">Publish Post</button>
+                            <button type="button" class="btn-secondary" id="save-draft">
+                                Save Draft
+                            </button>
+                            <button type="submit" class="btn-primary" id="publish-post">
+                                Publish
+                            </button>
                         </div>
                     </form>
                 </div>
-            </div>
+            </section>
 
-            <!-- Profile View -->
-            <div id="profile-view" class="view">
+            <!-- Profile Section -->
+            <section id="profile" class="content-section">
                 <div class="profile-container">
                     <div class="profile-header">
-                        <div class="avatar">
-                            <span id="profile-avatar">👤</span>
-                        </div>
+                        <div class="avatar-large" id="user-avatar">👤</div>
                         <div class="profile-info">
-                            <h2 id="profile-name">Loading...</h2>
-                            <p id="profile-type">User Type: Loading...</p>
-                            <p id="profile-stats">Posts: Loading...</p>
+                            <h2 id="profile-name">User Name</h2>
+                            <p id="profile-type">User Type</p>
+                            <p id="profile-stats">0 posts published</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat">
+                            <span class="stat-value" id="total-posts">0</span>
+                            <span class="stat-label">Total Posts</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-value" id="published-posts">0</span>
+                            <span class="stat-label">Published</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-value" id="draft-posts">0</span>
+                            <span class="stat-label">Drafts</span>
                         </div>
                     </div>
 
                     <div class="profile-actions">
-                        <button class="profile-btn" id="edit-profile-btn">Edit Profile</button>
-                        <button class="profile-btn" id="change-type-btn">Change User Type</button>
-                        <button class="profile-btn" id="my-posts-btn">My Posts</button>
-                        <button class="profile-btn" id="settings-btn">Settings</button>
-                    </div>
-
-                    <div class="profile-stats">
-                        <h3>Your Stats</h3>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-number" id="total-posts">0</span>
-                                <span class="stat-label">Posts</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="published-posts">0</span>
-                                <span class="stat-label">Published</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="draft-posts">0</span>
-                                <span class="stat-label">Drafts</span>
-                            </div>
-                        </div>
+                        <button class="profile-action-btn" id="edit-profile">
+                            Edit Profile
+                        </button>
+                        <button class="profile-action-btn" id="user-settings">
+                            Settings
+                        </button>
                     </div>
                 </div>
-            </div>
+            </section>
         </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Loading your experience...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -235,7 +185,5 @@
     <script src="scripts/telegram-webapp.js"></script>
     <script src="scripts/supabase-client.js"></script>
     <script src="app.js"></script>
-<!-- Add this RIGHT BEFORE closing </body> tag -->
-<script src="scripts/brightness-fix.js"></script>
 </body>
 </html>
