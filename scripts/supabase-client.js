@@ -74,104 +74,263 @@ class SupabaseClient {
     }
 
     // User Management - OPTIMIZED FOR YOUR STRUCTURE
-    async getUserByTelegramId(telegramId) {
-        if (!this.client && !this.init()) return null;
+    // async getUserByTelegramId(telegramId) {
+    //     if (!this.client && !this.init()) return null;
 
-        try {
-            const { data, error } = await this.client
-                .from(this.tableNames.users)
-                .select('*')
-                .eq('telegram_id', telegramId)
-                .maybeSingle();
+    //     try {
+    //         const { data, error } = await this.client
+    //             .from(this.tableNames.users)
+    //             .select('*')
+    //             .eq('telegram_id', telegramId)
+    //             .maybeSingle();
 
-            if (error) {
-                console.error('Error fetching user:', error);
-                return null;
-            }
+    //         if (error) {
+    //             console.error('Error fetching user:', error);
+    //             return null;
+    //         }
 
-            return data;
-        } catch (error) {
-            console.error('Exception in getUserByTelegramId:', error);
-            return null;
-        }
-    }
+    //         return data;
+    //     } catch (error) {
+    //         console.error('Exception in getUserByTelegramId:', error);
+    //         return null;
+    //     }
+    // }
 
-    async createUser(telegramUser) {
-        if (!this.client && !this.init()) return null;
+    // async createUser(telegramUser) {
+    //     if (!this.client && !this.init()) return null;
 
-        try {
-            // Check if user exists
-            const existingUser = await this.getUserByTelegramId(telegramUser.id);
-            if (existingUser) {
-                console.log('User already exists:', existingUser.id);
-                return existingUser;
-            }
+    //     try {
+    //         // Check if user exists
+    //         const existingUser = await this.getUserByTelegramId(telegramUser.id);
+    //         if (existingUser) {
+    //             console.log('User already exists:', existingUser.id);
+    //             return existingUser;
+    //         }
 
-            // Use your EXACT table structure
-            const userData = {
-                telegram_id: telegramUser.id,
-                username: telegramUser.username || null,
-                first_name: telegramUser.first_name || null,
-                last_name: telegramUser.last_name || null,
-                is_premium: telegramUser.is_premium || false,
-                user_type: 'general',
-                profile_completed: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
+    //         // Use your EXACT table structure
+    //         const userData = {
+    //             telegram_id: telegramUser.id,
+    //             username: telegramUser.username || null,
+    //             first_name: telegramUser.first_name || null,
+    //             last_name: telegramUser.last_name || null,
+    //             is_premium: telegramUser.is_premium || false,
+    //             user_type: 'general',
+    //             profile_completed: false,
+    //             created_at: new Date().toISOString(),
+    //             updated_at: new Date().toISOString()
+    //         };
 
-            console.log('Creating user with optimized structure:', userData);
+    //         console.log('Creating user with optimized structure:', userData);
             
-            const { data, error } = await this.client
-                .from(this.tableNames.users)
-                .insert(userData)
-                .select()
-                .single();
+    //         const { data, error } = await this.client
+    //             .from(this.tableNames.users)
+    //             .insert(userData)
+    //             .select()
+    //             .single();
 
-            if (error) {
-                console.error('Error creating user:', error);
-                return null;
-            }
+    //         if (error) {
+    //             console.error('Error creating user:', error);
+    //             return null;
+    //         }
 
-            console.log('User created successfully:', data.id);
-            return data;
-        } catch (error) {
-            console.error('Exception in createUser:', error);
+    //         console.log('User created successfully:', data.id);
+    //         return data;
+    //     } catch (error) {
+    //         console.error('Exception in createUser:', error);
+    //         return null;
+    //     }
+    // }
+
+    // async updateUserType(userId, userType) {
+    //     if (!this.client && !this.init()) return false;
+
+    //     try {
+    //         const validTypes = ['general', 'group_admin', 'channel_admin'];
+    //         if (!validTypes.includes(userType)) {
+    //             console.error('Invalid user type:', userType);
+    //             return false;
+    //         }
+
+    //         const { error } = await this.client
+    //             .from(this.tableNames.users)
+    //             .update({
+    //                 user_type: userType,
+    //                 profile_completed: true,
+    //                 updated_at: new Date().toISOString()
+    //             })
+    //             .eq('id', userId);
+
+    //         if (error) {
+    //             console.error('Error updating user type:', error);
+    //             return false;
+    //         }
+
+    //         console.log('User type updated successfully');
+    //         return true;
+    //     } catch (error) {
+    //         console.error('Exception in updateUserType:', error);
+    //         return false;
+    //     }
+    // }
+
+    // ||||||||||||||||||||||||||||||||||||||
+    // 🤱 ENHANCED User Authentication Methods
+
+// User Management - COMPLETE REWRITE
+async getUserByTelegramId(telegramId) {
+    if (!this.client && !this.init()) return null;
+
+    try {
+        console.log(`🔍 Fetching user with telegram_id: ${telegramId}`);
+        
+        const { data, error } = await this.client
+            .from('users')
+            .select('*')
+            .eq('telegram_id', telegramId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('❌ Error fetching user:', error);
             return null;
         }
+
+        console.log(data ? '✅ User found' : '❌ User not found');
+        return data;
+    } catch (error) {
+        console.error('💥 Exception in getUserByTelegramId:', error);
+        return null;
     }
+}
 
-    async updateUserType(userId, userType) {
-        if (!this.client && !this.init()) return false;
+async createUser(telegramUser) {
+    if (!this.client && !this.init()) return null;
 
-        try {
-            const validTypes = ['general', 'group_admin', 'channel_admin'];
-            if (!validTypes.includes(userType)) {
-                console.error('Invalid user type:', userType);
-                return false;
-            }
+    try {
+        console.log('👶 Creating new user:', telegramUser);
 
-            const { error } = await this.client
-                .from(this.tableNames.users)
-                .update({
-                    user_type: userType,
-                    profile_completed: true,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', userId);
-
-            if (error) {
-                console.error('Error updating user type:', error);
-                return false;
-            }
-
-            console.log('User type updated successfully');
-            return true;
-        } catch (error) {
-            console.error('Exception in updateUserType:', error);
-            return false;
+        // Check if user already exists
+        const existingUser = await this.getUserByTelegramId(telegramUser.id);
+        if (existingUser) {
+            console.log('✅ User already exists:', existingUser.id);
+            return existingUser;
         }
+
+        // COMPLETE user data
+        const userData = {
+            telegram_id: telegramUser.id,
+            username: telegramUser.username || null,
+            first_name: telegramUser.first_name || null,
+            last_name: telegramUser.last_name || null,
+            language_code: telegramUser.language_code || null,
+            is_premium: telegramUser.is_premium || false,
+            user_type: 'general',
+            profile_completed: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        console.log('📝 Inserting user data:', userData);
+
+        const { data, error } = await this.client
+            .from('users')
+            .insert(userData)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Error creating user:', error);
+            return null;
+        }
+
+        console.log('🎉 User created successfully:', data.id);
+        return data;
+    } catch (error) {
+        console.error('💥 Exception in createUser:', error);
+        return null;
     }
+}
+
+// NEW: Complete Authentication Flow
+async authenticateUser() {
+    try {
+        const telegramUser = window.TelegramWebApp.getUser();
+        
+        if (!telegramUser || !telegramUser.id) {
+            console.log('❌ No Telegram user data available');
+            return { success: false, error: 'No user data' };
+        }
+
+        console.log('🔐 Starting authentication for user:', telegramUser.id);
+
+        // Get or create user
+        let user = await this.getUserByTelegramId(telegramUser.id);
+        
+        if (!user) {
+            console.log('👶 Creating new user account...');
+            user = await this.createUser(telegramUser);
+        }
+
+        if (user) {
+            console.log('✅ Authentication successful:', user.id);
+            
+            // Store session
+            this.storeUserSession(user);
+            
+            return { 
+                success: true, 
+                user: user,
+                isNewUser: !user.profile_completed
+            };
+        } else {
+            return { success: false, error: 'Failed to create/get user' };
+        }
+    } catch (error) {
+        console.error('💥 Authentication error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// NEW: Session Management
+storeUserSession(user) {
+    try {
+        const sessionData = {
+            userId: user.id,
+            telegramId: user.telegram_id,
+            username: user.username,
+            firstName: user.first_name,
+            userType: user.user_type,
+            profileCompleted: user.profile_completed,
+            lastLogin: new Date().toISOString()
+        };
+        
+        localStorage.setItem('teleblog_session', JSON.stringify(sessionData));
+        localStorage.setItem('teleblog_user_id', user.id);
+        console.log('💾 Session stored successfully');
+    } catch (error) {
+        console.error('❌ Error storing session:', error);
+    }
+}
+
+getStoredSession() {
+    try {
+        const session = localStorage.getItem('teleblog_session');
+        return session ? JSON.parse(session) : null;
+    } catch (error) {
+        console.error('❌ Error reading session:', error);
+        return null;
+    }
+}
+
+clearSession() {
+    try {
+        localStorage.removeItem('teleblog_session');
+        localStorage.removeItem('teleblog_user_id');
+        console.log('🧹 Session cleared');
+    } catch (error) {
+        console.error('❌ Error clearing session:', error);
+    }
+}
+    // ======================================
 
     // Post Management - OPTIMIZED FOR YOUR STRUCTURE
     async getPublishedPosts(limit = 10, offset = 0) {

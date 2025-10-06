@@ -10,6 +10,8 @@ class TeleBlogApp {
     async init() {
         console.log('🚀 Initializing Modern TeleBlog...');
         
+         // Load theme preference
+        this.loadThemePreference(); 
         // Initialize components
         this.setupNavigation();
         this.setupEventListeners();
@@ -19,6 +21,13 @@ class TeleBlogApp {
         // Hide loading
         this.hideLoading();
     }
+
+   loadThemePreference() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+    } 
 
     setupNavigation() {
         // Handle hash changes for SPA navigation
@@ -31,8 +40,20 @@ class TeleBlogApp {
     }
 
     handleRouteChange() {
-        const hash = window.location.hash.substring(1) || 'home';
-        this.showSection(hash);
+    const hash = window.location.hash.substring(1) || 'home';
+    this.showSection(hash);
+    
+    // Add this to handle mobile menu closing
+    this.closeMobileMenu();
+    }
+
+    closeMobileMenu() {
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+        if (mobileMenu && navLinks) {
+            mobileMenu.classList.remove('active');
+            navLinks.classList.remove('active');
+        }
     }
 
     showSection(sectionId) {
@@ -58,50 +79,50 @@ class TeleBlogApp {
     }
 
     setupEventListeners() {
-        // Navigation clicks
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const section = item.dataset.section;
-                window.location.hash = section;
+        // ... existing code ...
+        
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                // Save theme preference to localStorage
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
             });
-        });
-
-        // CTA buttons
-        document.querySelectorAll('[data-section]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const section = btn.dataset.section;
-                window.location.hash = section;
-            });
-        });
-
-        // Post form
-        const postForm = document.getElementById('post-form');
-        if (postForm) {
-            postForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handlePostSubmit();
+        }
+        
+        // Mobile menu toggle
+        const mobileMenuBtn = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+        if (mobileMenuBtn && navLinks) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenuBtn.classList.toggle('active');
+                navLinks.classList.toggle('active');
             });
         }
 
-        // Character counter
-        const postContent = document.getElementById('post-content');
-        if (postContent) {
-            postContent.addEventListener('input', () => {
-                this.updateCharCounter();
+        // Close mobile menu when clicking nav links
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                this.closeMobileMenu();
             });
-        }
-    }
+        });
 
-    async loadUserData() {
-        // Simulate user loading
+
+    }   
+    
+        async loadUserData() {
+        // Update to match your new user structure
         this.currentUser = {
             name: 'TeleBlog User',
-            type: 'Blogger',
+            username: '@teleblogger',
+            type: 'Content Creator',
+            joinDate: new Date().toISOString(),
             stats: {
-                total: 0,
-                published: 0,
-                drafts: 0
+                posts: 0,
+                followers: '0',
+                following: '0'
             }
         };
 
@@ -126,62 +147,84 @@ class TeleBlogApp {
     updateUserUI() {
         const greeting = document.getElementById('user-greeting');
         const profileName = document.getElementById('profile-name');
+        const profileUsername = document.getElementById('profile-username');
         const profileType = document.getElementById('profile-type');
-        const profileStats = document.getElementById('profile-stats');
+        const postCount = document.getElementById('post-count');
+        const followerCount = document.getElementById('follower-count');
+        const followingCount = document.getElementById('following-count');
 
         if (this.currentUser) {
-            if (greeting) greeting.textContent = `Hello, ${this.currentUser.name}!`;
+            if (greeting) greeting.textContent = `Welcome back, ${this.currentUser.name}!`;
             if (profileName) profileName.textContent = this.currentUser.name;
+            if (profileUsername) profileUsername.textContent = this.currentUser.username;
             if (profileType) profileType.textContent = this.currentUser.type;
-            if (profileStats) {
-                profileStats.textContent = `${this.currentUser.stats.published} posts published`;
-            }
+            if (postCount) postCount.textContent = this.currentUser.stats.posts;
+            if (followerCount) followerCount.textContent = this.currentUser.stats.followers;
+            if (followingCount) followingCount.textContent = this.currentUser.stats.following;
         }
     }
 
     renderPosts() {
+        const postsContainer = document.getElementById('posts-container');
         const featuredContainer = document.getElementById('featured-posts');
-        const postsFeed = document.getElementById('posts-feed');
 
-        if (featuredContainer && this.posts.length > 0) {
-            featuredContainer.innerHTML = this.posts.map(post => `
-                <div class="post-card">
-                    <div class="post-header">
-                        <span class="post-author">${post.author}</span>
-                        <span class="post-date">${this.formatDate(post.date)}</span>
-                    </div>
-                    <h3 class="post-title">${post.title}</h3>
-                    <p class="post-excerpt">${post.excerpt}</p>
-                </div>
-            `).join('');
-        }
-
-        if (postsFeed) {
-            postsFeed.innerHTML = this.posts.length > 0 ? 
+        // For main posts feed with new card design
+        if (postsContainer) {
+            postsContainer.innerHTML = this.posts.length > 0 ? 
                 this.posts.map(post => `
-                    <div class="post-card">
+                    <div class="post-card modern-card">
                         <div class="post-header">
-                            <span class="post-author">${post.author}</span>
-                            <span class="post-date">${this.formatDate(post.date)}</span>
+                            <div class="user-info">
+                                <div class="avatar"></div>
+                                <div>
+                                    <span class="post-author">${post.author}</span>
+                                    <span class="post-date">${this.formatDate(post.date)}</span>
+                                </div>
+                            </div>
+                            <button class="menu-btn">⋯</button>
                         </div>
                         <h3 class="post-title">${post.title}</h3>
                         <p class="post-excerpt">${post.excerpt}</p>
+                        <div class="post-actions">
+                            <button class="action-btn">❤️ ${post.likes || 0}</button>
+                            <button class="action-btn">💬 ${post.comments || 0}</button>
+                            <button class="action-btn">🔄 ${post.shares || 0}</button>
+                        </div>
                     </div>
                 `).join('') :
-                '<div class="empty-state">No posts yet. Be the first to write!</div>';
+                '<div class="empty-state">No posts yet. Start writing your first post!</div>';
+        }
+
+        // For featured posts (if you have a featured section)
+        if (featuredContainer && this.posts.length > 0) {
+            featuredContainer.innerHTML = this.posts.slice(0, 3).map(post => `
+                <div class="featured-post modern-card">
+                    <h4>${post.title}</h4>
+                    <p>${post.excerpt}</p>
+                    <span class="featured-badge">Featured</span>
+                </div>
+            `).join('');
         }
     }
 
     updateStats() {
-        const livePosts = document.getElementById('live-posts');
-        const totalPosts = document.getElementById('total-posts');
-        const publishedPosts = document.getElementById('published-posts');
-        const draftPosts = document.getElementById('draft-posts');
+        // const livePosts = document.getElementById('live-posts');
+        // const totalPosts = document.getElementById('total-posts');
+        // const publishedPosts = document.getElementById('published-posts');
+        // const draftPosts = document.getElementById('draft-posts');
 
-        if (livePosts) livePosts.textContent = this.posts.length;
-        if (totalPosts) totalPosts.textContent = this.posts.length;
-        if (publishedPosts) publishedPosts.textContent = this.posts.length;
-        if (draftPosts) draftPosts.textContent = '0';
+        // if (livePosts) livePosts.textContent = this.posts.length;
+        // if (totalPosts) totalPosts.textContent = this.posts.length;
+        // if (publishedPosts) publishedPosts.textContent = this.posts.length;
+        // if (draftPosts) draftPosts.textContent = '0';
+
+        const postCount = document.getElementById('post-count');
+        const followerCount = document.getElementById('follower-count');
+        const followingCount = document.getElementById('following-count');
+
+        if (postCount) postCount.textContent = this.posts.length;
+        if (followerCount) followerCount.textContent = this.currentUser?.stats.followers || '0';
+        if (followingCount) followingCount.textContent = this.currentUser?.stats.following || '0';
     }
 
     updateCharCounter() {
