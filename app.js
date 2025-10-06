@@ -8,6 +8,38 @@ class TeleBlogApp {
         this.initialized = false;
     }
 
+// Add this method to your TeleBlogApp class:
+forceLightMode() {
+    console.log('💡 Forcing light mode for better visibility!');
+    
+    // Override any dark themes
+    document.documentElement.style.setProperty('--bg-color', '#ffffff', 'important');
+    document.documentElement.style.setProperty('--text-color', '#000000', 'important');
+    document.documentElement.style.setProperty('--light-color', '#f8f9fa', 'important');
+    document.documentElement.style.setProperty('--border-color', '#dee2e6', 'important');
+    
+    // Force body styles
+    document.body.style.backgroundColor = '#ffffff';
+    document.body.style.color = '#000000';
+    
+    // Force specific elements
+    document.querySelectorAll('.post-card, .stat-card, .featured-post').forEach(el => {
+        el.style.backgroundColor = '#ffffff';
+        el.style.color = '#000000';
+        el.style.borderColor = '#dee2e6';
+    });
+},
+
+// Then call it in your init method:
+async init() {
+    // ... your existing code ...
+    
+    // FORCE LIGHT MODE - Never dark again!
+    this.forceLightMode();
+    
+    // ... rest of your code ...
+}
+
     async init() {
         if (this.initialized) return;
         

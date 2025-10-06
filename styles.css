@@ -42,6 +42,48 @@
     }
 }
 
+
+/* 🚨 REMOVE or COMMENT OUT this section from your CSS: */
+/*
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --light-color: #2d2d2d;
+        --border-color: #404040;
+    }
+}
+*/
+
+/* 🎨 INSTEAD - Add this BRIGHT theme enforcement: */
+:root {
+    --bg-color: #ffffff !important;
+    --text-color: #000000 !important;
+    --light-color: #f8f9fa !important;
+    --border-color: #dee2e6 !important;
+}
+
+/* 🌞 Force light theme everywhere */
+body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+.app-main {
+    background-color: #ffffff !important;
+}
+
+.post-card {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #dee2e6 !important;
+}
+
+.welcome-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
 /* 🚀 SCROLL INDICATOR - Users know to scroll */
 .scroll-indicator {
     text-align: center;
