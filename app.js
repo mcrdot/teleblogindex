@@ -34,8 +34,8 @@ class TeleBlogApp {
 
     initializeSupabase() {
         return createClient(
-            'https://your-project.supabase.co',
-            'your-anon-key'
+            'https://hudrcdftoqcwxskhuahg.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo'
         );
     }
 
