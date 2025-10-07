@@ -1,23 +1,27 @@
+
 // Modern Single Page App
 
 // We need to add Supabase client initialization
 import { createClient } from '@supabase/supabase-js';
 
 // Modern Single Page App with Supabase
+// Modern Single Page App with Full Supabase Integration
 class TeleBlogApp {
     constructor() {
         this.currentSection = 'home';
         this.currentUser = null;
         this.posts = [];
         this.supabase = null;
+        this.authManager = null;
         this.init();
     }
 
     async init() {
-        console.log('🚀 Initializing Modern TeleBlog with Supabase...');
+        console.log('🚀 Initializing Modern TeleBlog with Full Supabase Integration...');
         
         // Initialize Supabase
         this.supabase = this.initializeSupabase();
+        this.authManager = new AuthManager(this.supabase, this);
         
         // Check auth state
         await this.checkAuthState();
@@ -25,8 +29,12 @@ class TeleBlogApp {
         // Initialize components
         this.setupNavigation();
         this.setupEventListeners();
-        await this.loadUserData();
-        await this.loadPosts();
+        this.setupAuthHandlers();
+        
+        if (this.currentUser) {
+            await this.loadUserData();
+            await this.loadPosts();
+        }
         
         // Hide loading
         this.hideLoading();
@@ -34,6 +42,7 @@ class TeleBlogApp {
 
     initializeSupabase() {
         return createClient(
+
             'https://hudrcdftoqcwxskhuahg.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo'
         );
@@ -43,217 +52,222 @@ class TeleBlogApp {
         const { data: { session } } = await this.supabase.auth.getSession();
         if (session) {
             console.log('User is authenticated:', session.user.email);
+            this.updateAuthUI(true);
         } else {
             console.log('No user session found');
-            this.showSection('auth'); // Redirect to auth section
-        }
-    }
-
-    async loadUserData() {
-        const { data: { user } } = await this.supabase.auth.getUser();
-        
-        if (user) {
-            // Get user profile from users table
-            const { data: userProfile, error } = await this.supabase
-                .from('users')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (error) {
-                console.error('Error loading user profile:', error);
-                // Create user profile if doesn't exist
-                await this.createUserProfile(user);
-                return;
-            }
-
-            this.currentUser = {
-                id: user.id,
-                email: user.email,
-                name: userProfile?.full_name || user.email.split('@')[0],
-                username: userProfile?.username || '@teleblogger',
-                type: userProfile?.user_type || 'Blogger',
-                avatar: userProfile?.avatar_url,
-                stats: {
-                    posts: userProfile?.post_count || 0,
-                    followers: userProfile?.follower_count || '0',
-                    following: userProfile?.following_count || '0'
-                },
-                joinDate: userProfile?.created_at || user.created_at
-            };
-        } else {
-            this.currentUser = null;
-        }
-
-        this.updateUserUI();
-    }
-
-    async createUserProfile(user) {
-        const { error } = await this.supabase
-            .from('users')
-            .insert([
-                {
-                    id: user.id,
-                    email: user.email,
-                    full_name: user.email.split('@')[0],
-                    username: `@${user.email.split('@')[0]}`,
-                    user_type: 'Blogger',
-                    created_at: new Date().toISOString()
-                }
-            ]);
-
-        if (error) {
-            console.error('Error creating user profile:', error);
-        } else {
-            console.log('User profile created successfully');
-            await this.loadUserData(); // Reload user data
-        }
-    }
-
-    async loadPosts() {
-        if (!this.currentUser) return;
-
-        // Get posts from Supabase
-        const { data: posts, error } = await this.supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error loading posts:', error);
-            this.posts = [];
-        } else {
-            this.posts = posts || [];
-        }
-
-        this.renderPosts();
-        this.updateStats();
-    }
-
-    // Update the post submission to use Supabase
-    async handlePostSubmit() {
-        if (!this.currentUser) {
-            alert('Please login to create posts!');
+            this.updateAuthUI(false);
             this.showSection('auth');
-            return;
-        }
-
-        const title = document.getElementById('post-title').value;
-        const content = document.getElementById('post-content').value;
-        const tags = document.getElementById('post-tags').value;
-
-        if (!title || !content) {
-            alert('Please fill in both title and content!');
-            return;
-        }
-
-        this.showLoading();
-        
-        // Submit to Supabase
-        const { data, error } = await this.supabase
-            .from('posts')
-            .insert([
-                {
-                    title: title,
-                    content: content,
-                    excerpt: content.substring(0, 150) + '...',
-                    author: this.currentUser.name,
-                    author_id: this.currentUser.id,
-                    tags: tags.split(',').map(tag => tag.trim()),
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                }
-            ]);
-
-        this.hideLoading();
-
-        if (error) {
-            alert('Error publishing post: ' + error.message);
-        } else {
-            alert('Post published successfully! 🎉');
-            document.getElementById('post-form').reset();
-            this.updateCharCounter();
-            await this.loadPosts(); // Reload posts
-            window.location.hash = 'posts';
         }
     }
 
-    // Add auth methods
-    async handleLogin(email, password) {
-        this.showLoading();
-        
-        const { data, error } = await this.supabase.auth.signInWithPassword({
-            email: email,
-            password: password
+    setupAuthHandlers() {
+        // Login form
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleLoginSubmit(e);
+            });
+        }
+
+        // Signup form
+        const signupForm = document.getElementById('signup-form');
+        if (signupForm) {
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleSignupSubmit(e);
+            });
+        }
+
+        // Forgot password form
+        const forgotForm = document.getElementById('forgot-password-form');
+        if (forgotForm) {
+            forgotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleForgotPasswordSubmit(e);
+            });
+        }
+
+        // Auth form switchers
+        this.setupAuthSwitchers();
+    }
+
+    setupAuthSwitchers() {
+        // Show signup form
+        document.getElementById('show-signup')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showAuthForm('signup');
         });
 
-        this.hideLoading();
+        // Show login form
+        document.getElementById('show-login')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showAuthForm('login');
+        });
 
-        if (error) {
-            alert('Login failed: ' + error.message);
-            return false;
-        } else {
+        document.getElementById('show-login-from-forgot')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showAuthForm('login');
+        });
+
+        // Show forgot password
+        document.getElementById('forgot-password')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showAuthForm('forgot');
+        });
+    }
+
+    showAuthForm(formType) {
+        // Hide all forms
+        document.querySelectorAll('.auth-form').forEach(form => {
+            form.classList.remove('active');
+        });
+
+        // Show selected form
+        const targetForm = document.getElementById(`${formType}-form`);
+        if (targetForm) {
+            targetForm.classList.add('active');
+        }
+    }
+
+    async handleLoginSubmit(e) {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        const result = await this.authManager.login(email, password);
+        
+        if (result.success) {
+            this.showNotification('Login successful! 🎉', 'success');
             await this.loadUserData();
             await this.loadPosts();
             this.showSection('home');
-            return true;
+        } else {
+            this.showNotification(result.error, 'error');
         }
     }
 
-    async handleSignup(email, password, fullName) {
-        this.showLoading();
+    async handleSignupSubmit(e) {
+        const fullName = document.getElementById('signup-fullname').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+
+        const result = await this.authManager.signup(email, password, fullName);
         
-        const { data, error } = await this.supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    full_name: fullName
-                }
-            }
-        });
-
-        this.hideLoading();
-
-        if (error) {
-            alert('Signup failed: ' + error.message);
-            return false;
+        if (result.success) {
+            this.showNotification(result.message, 'success');
+            this.showAuthForm('login');
         } else {
-            alert('Signup successful! Please check your email for verification.');
-            this.showSection('auth');
-            return true;
+            this.showNotification(result.error, 'error');
+        }
+    }
+
+    async handleForgotPasswordSubmit(e) {
+        const email = document.getElementById('reset-email').value;
+
+        const result = await this.authManager.resetPassword(email);
+        
+        if (result.success) {
+            this.showNotification(result.message, 'success');
+            this.showAuthForm('login');
+        } else {
+            this.showNotification(result.error, 'error');
         }
     }
 
     async handleLogout() {
-        const { error } = await this.supabase.auth.signOut();
-        if (error) {
-            console.error('Logout error:', error);
-        } else {
+        const result = await this.authManager.logout();
+        
+        if (result.success) {
+            this.showNotification('Logged out successfully!', 'success');
             this.currentUser = null;
             this.posts = [];
+            this.updateAuthUI(false);
             this.updateUserUI();
             this.renderPosts();
             this.showSection('auth');
+        } else {
+            this.showNotification(result.error, 'error');
         }
     }
 
-    // Rest of your existing methods remain the same...
-    // (setupNavigation, handleRouteChange, showSection, setupEventListeners, etc.)
-}
-
-class TeleBlogApp {
-    constructor() {
-        this.currentSection = 'home';
-        this.currentUser = null;
-        this.posts = [];
-        this.init();
+    updateAuthUI(isLoggedIn) {
+        const body = document.body;
+        
+        if (isLoggedIn) {
+            body.classList.add('logged-in');
+            body.classList.remove('guest-only');
+            
+            // Update nav items
+            document.querySelectorAll('.guest-only').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.auth-only').forEach(el => {
+                el.style.display = 'block';
+            });
+        } else {
+            body.classList.add('guest-only');
+            body.classList.remove('logged-in');
+            
+            // Update nav items
+            document.querySelectorAll('.guest-only').forEach(el => {
+                el.style.display = 'block';
+            });
+            document.querySelectorAll('.auth-only').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
     }
+
+    showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // Create new notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Show notification
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+
+        // Close button
+        notification.querySelector('.notification-close').addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        });
+    }
+
+    // ... rest of your existing methods (loadUserData, loadPosts, etc.)
 
     async init() {
         console.log('🚀 Initializing Modern TeleBlog...');
         
-         // Load theme preference
+        // Load theme preference
         this.loadThemePreference(); 
         // Initialize components
         this.setupNavigation();
@@ -265,7 +279,7 @@ class TeleBlogApp {
         this.hideLoading();
     }
 
-   loadThemePreference() {
+    loadThemePreference() {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
@@ -300,60 +314,34 @@ class TeleBlogApp {
     }
 
     showSection(sectionId) {
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(section => {
-            section.classList.remove('active');
-        });
-
-        // Update navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Show target section
-        const targetSection = document.getElementById(sectionId);
-        const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
-        
-        if (targetSection && targetNav) {
-            targetSection.classList.add('active');
-            targetNav.classList.add('active');
-            this.currentSection = sectionId;
-        }
+    // Don't show protected sections to guests
+    const protectedSections = ['posts', 'create', 'profile'];
+    if (!this.currentUser && protectedSections.includes(sectionId)) {
+        this.showNotification('Please login to access this section!', 'error');
+        this.showSection('auth');
+        return;
     }
 
-    setupEventListeners() {
-        // ... existing code ...
-        
-        // Theme toggle
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                // Save theme preference to localStorage
-                const isDark = document.body.classList.contains('dark-mode');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            });
-        }
-        
-        // Mobile menu toggle
-        const mobileMenuBtn = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-        if (mobileMenuBtn && navLinks) {
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenuBtn.classList.toggle('active');
-                navLinks.classList.toggle('active');
-            });
-        }
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
 
-        // Close mobile menu when clicking nav links
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                this.closeMobileMenu();
-            });
-        });
+    // Update navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
 
-
-    }   
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
+    
+    if (targetSection && targetNav) {
+        targetSection.classList.add('active');
+        targetNav.classList.add('active');
+        this.currentSection = sectionId;
+    }
+    } 
     
         async loadUserData() {
         // Update to match your new user structure
