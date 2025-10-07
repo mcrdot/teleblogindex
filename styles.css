@@ -87,7 +87,7 @@ body {
 }
 
 .logo {
-    height: 100px; /* Adjust as needed */
+    height: 55px; /* Adjust as needed */
     width: auto;
 }
 
@@ -122,6 +122,103 @@ body {
     background: #906b6a;
     color: #3f2529;
 }
+
+/* ||||||||||||||||||||| */
+/* Auth Styles */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+}
+
+.auth-logo {
+    height: 50px;
+    margin: 0 auto 2rem;
+    display: block;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.auth-form h2 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    background: var(--bg-secondary);
+    color: var(--text-color);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.auth-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    display: block;
+    margin: 0.5rem 0;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* Update existing nav for auth state */
+.auth-only {
+    display: none;
+}
+
+.logged-in .auth-only {
+    display: block;
+}
+
+.logged-in .guest-only {
+    display: none;
+}
+/* ||||||||||||||||||||| */
 
 /* Modern Navigation */
 .main-nav {

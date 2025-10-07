@@ -49,7 +49,79 @@
         </nav>
 
         <!-- Main Content - Dynamic Sections -->
+        <!-- ||||||||||||||||||||||||||||||| -->
         <main class="app-main">
+        <!-- ||||||||||||||||||||||||||||||| -->
+            <!-- Auth Section -->
+            <section id="auth" class="content-section">
+                <div class="auth-container">
+                    <div class="auth-card modern-card">
+                        <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
+                        
+                        <!-- Login Form -->
+                        <form id="login-form" class="auth-form active">
+                            <h2>Welcome Back</h2>
+                            <p class="auth-subtitle">Sign in to your account</p>
+                            
+                            <div class="form-group">
+                                <input type="email" id="login-email" placeholder="Email address" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="password" id="login-password" placeholder="Password" required>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary full-width">Sign In</button>
+                            
+                            <div class="auth-links">
+                                <a href="#" id="forgot-password">Forgot password?</a>
+                                <a href="#" id="show-signup">Don't have an account? Sign up</a>
+                            </div>
+                        </form>
+
+                        <!-- Signup Form -->
+                        <form id="signup-form" class="auth-form">
+                            <h2>Create Account</h2>
+                            <p class="auth-subtitle">Join the TeleBlog community</p>
+                            
+                            <div class="form-group">
+                                <input type="text" id="signup-fullname" placeholder="Full name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="email" id="signup-email" placeholder="Email address" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" required>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary full-width">Create Account</button>
+                            
+                            <div class="auth-links">
+                                <a href="#" id="show-login">Already have an account? Sign in</a>
+                            </div>
+                        </form>
+
+                        <!-- Forgot Password Form -->
+                        <form id="forgot-password-form" class="auth-form">
+                            <h2>Reset Password</h2>
+                            <p class="auth-subtitle">Enter your email to reset password</p>
+                            
+                            <div class="form-group">
+                                <input type="email" id="reset-email" placeholder="Email address" required>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary full-width">Send Reset Instructions</button>
+                            
+                            <div class="auth-links">
+                                <a href="#" id="show-login-from-forgot">Back to sign in</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            
             <!-- Home Section -->
             <section id="home" class="content-section active">
                 <div class="hero-banner">

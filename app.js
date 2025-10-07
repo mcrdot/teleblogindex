@@ -1,4 +1,247 @@
 // Modern Single Page App
+
+// We need to add Supabase client initialization
+import { createClient } from '@supabase/supabase-js';
+
+// Modern Single Page App with Supabase
+class TeleBlogApp {
+    constructor() {
+        this.currentSection = 'home';
+        this.currentUser = null;
+        this.posts = [];
+        this.supabase = null;
+        this.init();
+    }
+
+    async init() {
+        console.log('🚀 Initializing Modern TeleBlog with Supabase...');
+        
+        // Initialize Supabase
+        this.supabase = this.initializeSupabase();
+        
+        // Check auth state
+        await this.checkAuthState();
+        
+        // Initialize components
+        this.setupNavigation();
+        this.setupEventListeners();
+        await this.loadUserData();
+        await this.loadPosts();
+        
+        // Hide loading
+        this.hideLoading();
+    }
+
+    initializeSupabase() {
+        return createClient(
+            'https://your-project.supabase.co',
+            'your-anon-key'
+        );
+    }
+
+    async checkAuthState() {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        if (session) {
+            console.log('User is authenticated:', session.user.email);
+        } else {
+            console.log('No user session found');
+            this.showSection('auth'); // Redirect to auth section
+        }
+    }
+
+    async loadUserData() {
+        const { data: { user } } = await this.supabase.auth.getUser();
+        
+        if (user) {
+            // Get user profile from users table
+            const { data: userProfile, error } = await this.supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error('Error loading user profile:', error);
+                // Create user profile if doesn't exist
+                await this.createUserProfile(user);
+                return;
+            }
+
+            this.currentUser = {
+                id: user.id,
+                email: user.email,
+                name: userProfile?.full_name || user.email.split('@')[0],
+                username: userProfile?.username || '@teleblogger',
+                type: userProfile?.user_type || 'Blogger',
+                avatar: userProfile?.avatar_url,
+                stats: {
+                    posts: userProfile?.post_count || 0,
+                    followers: userProfile?.follower_count || '0',
+                    following: userProfile?.following_count || '0'
+                },
+                joinDate: userProfile?.created_at || user.created_at
+            };
+        } else {
+            this.currentUser = null;
+        }
+
+        this.updateUserUI();
+    }
+
+    async createUserProfile(user) {
+        const { error } = await this.supabase
+            .from('users')
+            .insert([
+                {
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.email.split('@')[0],
+                    username: `@${user.email.split('@')[0]}`,
+                    user_type: 'Blogger',
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        if (error) {
+            console.error('Error creating user profile:', error);
+        } else {
+            console.log('User profile created successfully');
+            await this.loadUserData(); // Reload user data
+        }
+    }
+
+    async loadPosts() {
+        if (!this.currentUser) return;
+
+        // Get posts from Supabase
+        const { data: posts, error } = await this.supabase
+            .from('posts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading posts:', error);
+            this.posts = [];
+        } else {
+            this.posts = posts || [];
+        }
+
+        this.renderPosts();
+        this.updateStats();
+    }
+
+    // Update the post submission to use Supabase
+    async handlePostSubmit() {
+        if (!this.currentUser) {
+            alert('Please login to create posts!');
+            this.showSection('auth');
+            return;
+        }
+
+        const title = document.getElementById('post-title').value;
+        const content = document.getElementById('post-content').value;
+        const tags = document.getElementById('post-tags').value;
+
+        if (!title || !content) {
+            alert('Please fill in both title and content!');
+            return;
+        }
+
+        this.showLoading();
+        
+        // Submit to Supabase
+        const { data, error } = await this.supabase
+            .from('posts')
+            .insert([
+                {
+                    title: title,
+                    content: content,
+                    excerpt: content.substring(0, 150) + '...',
+                    author: this.currentUser.name,
+                    author_id: this.currentUser.id,
+                    tags: tags.split(',').map(tag => tag.trim()),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ]);
+
+        this.hideLoading();
+
+        if (error) {
+            alert('Error publishing post: ' + error.message);
+        } else {
+            alert('Post published successfully! 🎉');
+            document.getElementById('post-form').reset();
+            this.updateCharCounter();
+            await this.loadPosts(); // Reload posts
+            window.location.hash = 'posts';
+        }
+    }
+
+    // Add auth methods
+    async handleLogin(email, password) {
+        this.showLoading();
+        
+        const { data, error } = await this.supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        this.hideLoading();
+
+        if (error) {
+            alert('Login failed: ' + error.message);
+            return false;
+        } else {
+            await this.loadUserData();
+            await this.loadPosts();
+            this.showSection('home');
+            return true;
+        }
+    }
+
+    async handleSignup(email, password, fullName) {
+        this.showLoading();
+        
+        const { data, error } = await this.supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    full_name: fullName
+                }
+            }
+        });
+
+        this.hideLoading();
+
+        if (error) {
+            alert('Signup failed: ' + error.message);
+            return false;
+        } else {
+            alert('Signup successful! Please check your email for verification.');
+            this.showSection('auth');
+            return true;
+        }
+    }
+
+    async handleLogout() {
+        const { error } = await this.supabase.auth.signOut();
+        if (error) {
+            console.error('Logout error:', error);
+        } else {
+            this.currentUser = null;
+            this.posts = [];
+            this.updateUserUI();
+            this.renderPosts();
+            this.showSection('auth');
+        }
+    }
+
+    // Rest of your existing methods remain the same...
+    // (setupNavigation, handleRouteChange, showSection, setupEventListeners, etc.)
+}
+
 class TeleBlogApp {
     constructor() {
         this.currentSection = 'home';
