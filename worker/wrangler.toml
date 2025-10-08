@@ -1,0 +1,12 @@
+name = "teleblog-auth-worker"
+compatibility_date = "2024-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+SUPABASE_URL = "https://hudrcdftoqcwxskhuahg.supabase.co"
+
+# These will be set as secrets - NEVER commit actual values!
+
+# Run: wrangler secret put SUPABASE_SERVICE_KEY
+# Run: wrangler secret put BOT_TOKEN
+# Run: wrangler secret put JWT_SECRET

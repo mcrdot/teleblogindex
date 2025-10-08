@@ -1,193 +1,233 @@
-
-// Modern Single Page App
-
-// We need to add Supabase client initialization
-import { createClient } from '@supabase/supabase-js';
-
-// Modern Single Page App with Supabase
-// Modern Single Page App with Full Supabase Integration
+// TeleBlog - Modern Telegram Mini App
 class TeleBlogApp {
     constructor() {
         this.currentSection = 'home';
         this.currentUser = null;
         this.posts = [];
-        this.supabase = null;
-        this.authManager = null;
+        this.jwtToken = localStorage.getItem('teleblog_token');
         this.init();
     }
 
     async init() {
-        console.log('🚀 Initializing Modern TeleBlog with Full Supabase Integration...');
-        
-        // Initialize Supabase
-        this.supabase = this.initializeSupabase();
-        this.authManager = new AuthManager(this.supabase, this);
-        
-        // Check auth state
-        await this.checkAuthState();
+        console.log('🚀 Initializing TeleBlog...');
         
         // Initialize components
         this.setupNavigation();
         this.setupEventListeners();
-        this.setupAuthHandlers();
+        
+        // Check authentication
+        await this.checkAuth();
         
         if (this.currentUser) {
-            await this.loadUserData();
             await this.loadPosts();
+            this.updateAuthUI(true);
+        } else {
+            this.showSection('auth');
         }
         
-        // Hide loading
         this.hideLoading();
     }
 
-    initializeSupabase() {
-        return createClient(
+    async checkAuth() {
+        // Check if we have a valid token
+        if (this.jwtToken) {
+            try {
+                const payload = JSON.parse(atob(this.jwtToken.split('.')[1]));
+                if (payload.exp > Date.now() / 1000) {
+                    this.currentUser = JSON.parse(localStorage.getItem('teleblog_user'));
+                    return true;
+                }
+            } catch (e) {
+                console.log('Invalid token');
+            }
+        }
 
-            'https://hudrcdftoqcwxskhuahg.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZHJjZGZ0b3Fjd3hza2h1YWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTMwNjcsImV4cCI6MjA3MTY2OTA2N30.YqGQBcFC2oVJILZyvVP7OgPlOOkuqO6eF1QaABb7MCo'
-        );
+        // Check Telegram authentication
+        if (window.Telegram && Telegram.WebApp) {
+            await this.handleTelegramAuth();
+        }
+        
+        return this.currentUser !== null;
     }
 
-    async checkAuthState() {
-        const { data: { session } } = await this.supabase.auth.getSession();
-        if (session) {
-            console.log('User is authenticated:', session.user.email);
-            this.updateAuthUI(true);
-        } else {
-            console.log('No user session found');
-            this.updateAuthUI(false);
+// tbwrkrintgr
+    async handleTelegramAuth() {
+    const initData = Telegram.WebApp.initData;
+    
+    if (!initData) {
+        console.log('No Telegram initData available');
+        return;
+    }
+
+    this.showLoading();
+
+    try {
+        // 🎯 UPDATE THIS LINE WITH YOUR WORKER URL
+        const workerUrl = 'https://teleblog-indexjs.macrotiser-pk.workers.dev';
+        const response = await fetch(`${workerUrl}/auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Auth failed: ${response.status}`);
+        }
+
+        const { user, token } = await response.json();
+        
+        this.currentUser = user;
+        this.jwtToken = token;
+        
+        // Store for future sessions
+        localStorage.setItem('teleblog_token', token);
+        localStorage.setItem('teleblog_user', JSON.stringify(user));
+        
+        console.log('User authenticated:', user);
+        
+        // Update UI and load posts
+        this.updateAuthUI(true);
+        this.updateUserUI();
+        await this.loadPosts();
+        
+    } catch (error) {
+        console.error('Authentication error:', error);
+        this.showNotification('Authentication failed. Please try again.', 'error');
+    } finally {
+        this.hideLoading();
+    }
+}
+
+    setupNavigation() {
+        // Handle hash changes for SPA navigation
+        window.addEventListener('hashchange', () => {
+            this.handleRouteChange();
+        });
+
+        // Handle initial route
+        this.handleRouteChange();
+    }
+
+    handleRouteChange() {
+        const hash = window.location.hash.substring(1) || 'home';
+        this.showSection(hash);
+    }
+
+    showSection(sectionId) {
+        // Don't show protected sections to guests
+        const protectedSections = ['posts', 'create', 'profile'];
+        if (!this.currentUser && protectedSections.includes(sectionId)) {
+            this.showNotification('Please login with Telegram to access this section!', 'error');
             this.showSection('auth');
+            return;
+        }
+
+        // Hide all sections
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Update navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Show target section
+        const targetSection = document.getElementById(sectionId);
+        const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
+        
+        if (targetSection && targetNav) {
+            targetSection.classList.add('active');
+            targetNav.classList.add('active');
+            this.currentSection = sectionId;
         }
     }
 
-    setupAuthHandlers() {
-        // Login form
-        const loginForm = document.getElementById('login-form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
+    setupEventListeners() {
+        // Navigation clicks
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
                 e.preventDefault();
-                await this.handleLoginSubmit(e);
+                const section = item.dataset.section;
+                window.location.hash = section;
+            });
+        });
+
+        // Logout button
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleLogout();
+        });
+
+        // Development login button
+        document.getElementById('dev-login-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleDevLogin();
+        });
+
+        // Post form
+        const postForm = document.getElementById('post-form');
+        if (postForm) {
+            postForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handlePostSubmit();
             });
         }
 
-        // Signup form
-        const signupForm = document.getElementById('signup-form');
-        if (signupForm) {
-            signupForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await this.handleSignupSubmit(e);
+        // Character counter
+        const postContent = document.getElementById('post-content');
+        if (postContent) {
+            postContent.addEventListener('input', () => {
+                this.updateCharCounter();
             });
         }
 
-        // Forgot password form
-        const forgotForm = document.getElementById('forgot-password-form');
-        if (forgotForm) {
-            forgotForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await this.handleForgotPasswordSubmit(e);
+        // Mobile menu
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+        if (mobileMenu && navLinks) {
+            mobileMenu.addEventListener('click', () => {
+                mobileMenu.classList.toggle('active');
+                navLinks.classList.toggle('active');
             });
         }
-
-        // Auth form switchers
-        this.setupAuthSwitchers();
     }
 
-    setupAuthSwitchers() {
-        // Show signup form
-        document.getElementById('show-signup')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showAuthForm('signup');
-        });
-
-        // Show login form
-        document.getElementById('show-login')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showAuthForm('login');
-        });
-
-        document.getElementById('show-login-from-forgot')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showAuthForm('login');
-        });
-
-        // Show forgot password
-        document.getElementById('forgot-password')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showAuthForm('forgot');
-        });
-    }
-
-    showAuthForm(formType) {
-        // Hide all forms
-        document.querySelectorAll('.auth-form').forEach(form => {
-            form.classList.remove('active');
-        });
-
-        // Show selected form
-        const targetForm = document.getElementById(`${formType}-form`);
-        if (targetForm) {
-            targetForm.classList.add('active');
-        }
-    }
-
-    async handleLoginSubmit(e) {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-
-        const result = await this.authManager.login(email, password);
+    async handleDevLogin() {
+        // Development fallback - create a mock user
+        this.currentUser = {
+            id: 'dev-user-123',
+            telegram_id: '123456789',
+            username: 'devuser',
+            display_name: 'Development User',
+            role: 'reader',
+            avatar_url: null
+        };
         
-        if (result.success) {
-            this.showNotification('Login successful! 🎉', 'success');
-            await this.loadUserData();
-            await this.loadPosts();
-            this.showSection('home');
-        } else {
-            this.showNotification(result.error, 'error');
-        }
-    }
-
-    async handleSignupSubmit(e) {
-        const fullName = document.getElementById('signup-fullname').value;
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-
-        const result = await this.authManager.signup(email, password, fullName);
+        this.jwtToken = 'dev-token-' + Date.now();
         
-        if (result.success) {
-            this.showNotification(result.message, 'success');
-            this.showAuthForm('login');
-        } else {
-            this.showNotification(result.error, 'error');
-        }
-    }
-
-    async handleForgotPasswordSubmit(e) {
-        const email = document.getElementById('reset-email').value;
-
-        const result = await this.authManager.resetPassword(email);
+        localStorage.setItem('teleblog_token', this.jwtToken);
+        localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
         
-        if (result.success) {
-            this.showNotification(result.message, 'success');
-            this.showAuthForm('login');
-        } else {
-            this.showNotification(result.error, 'error');
-        }
+        this.updateAuthUI(true);
+        this.updateUserUI();
+        this.showSection('home');
+        this.showNotification('Development login successful!', 'success');
     }
 
     async handleLogout() {
-        const result = await this.authManager.logout();
+        this.currentUser = null;
+        this.jwtToken = null;
+        this.posts = [];
         
-        if (result.success) {
-            this.showNotification('Logged out successfully!', 'success');
-            this.currentUser = null;
-            this.posts = [];
-            this.updateAuthUI(false);
-            this.updateUserUI();
-            this.renderPosts();
-            this.showSection('auth');
-        } else {
-            this.showNotification(result.error, 'error');
-        }
+        localStorage.removeItem('teleblog_token');
+        localStorage.removeItem('teleblog_user');
+        
+        this.updateAuthUI(false);
+        this.updateUserUI();
+        this.renderPosts();
+        this.showSection('auth');
+        this.showNotification('Logged out successfully!', 'success');
     }
 
     updateAuthUI(isLoggedIn) {
@@ -196,25 +236,157 @@ class TeleBlogApp {
         if (isLoggedIn) {
             body.classList.add('logged-in');
             body.classList.remove('guest-only');
-            
-            // Update nav items
-            document.querySelectorAll('.guest-only').forEach(el => {
-                el.style.display = 'none';
-            });
-            document.querySelectorAll('.auth-only').forEach(el => {
-                el.style.display = 'block';
-            });
         } else {
             body.classList.add('guest-only');
             body.classList.remove('logged-in');
+        }
+    }
+
+    updateUserUI() {
+        const profileName = document.getElementById('profile-name');
+        const profileUsername = document.getElementById('profile-username');
+        const profileType = document.getElementById('profile-type');
+        const postCount = document.getElementById('post-count');
+
+        if (this.currentUser) {
+            if (profileName) profileName.textContent = this.currentUser.display_name;
+            if (profileUsername) profileUsername.textContent = this.currentUser.username ? `@${this.currentUser.username}` : '';
+            if (profileType) profileType.textContent = this.currentUser.role || 'User';
+            if (postCount) postCount.textContent = this.posts.length;
+        } else {
+            if (profileName) profileName.textContent = 'Not logged in';
+            if (profileUsername) profileUsername.textContent = '';
+            if (profileType) profileType.textContent = 'Guest';
+            if (postCount) postCount.textContent = '0';
+        }
+    }
+
+    async loadPosts() {
+        if (!this.currentUser) return;
+
+        try {
+            // Simulated posts for now - replace with actual API call
+            this.posts = [
+                {
+                    id: '1',
+                    title: 'Welcome to TeleBlog!',
+                    excerpt: 'Start your blogging journey with our decentralized platform built on Telegram.',
+                    author: 'TeleBlog Team',
+                    date: new Date().toISOString(),
+                    tags: ['welcome', 'introduction']
+                },
+                {
+                    id: '2', 
+                    title: 'Getting Started Guide',
+                    excerpt: 'Learn how to create and publish your first post on TeleBlog.',
+                    author: 'TeleBlog Team',
+                    date: new Date(Date.now() - 86400000).toISOString(),
+                    tags: ['guide', 'tutorial']
+                }
+            ];
+
+            this.renderPosts();
+            this.updateStats();
+        } catch (error) {
+            console.error('Error loading posts:', error);
+            this.showNotification('Failed to load posts', 'error');
+        }
+    }
+
+    renderPosts() {
+        const postsContainer = document.getElementById('posts-container');
+
+        if (postsContainer) {
+            if (this.posts.length > 0) {
+                postsContainer.innerHTML = this.posts.map(post => `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <span class="post-author">${post.author}</span>
+                            <span class="post-date">${this.formatDate(post.date)}</span>
+                        </div>
+                        <h3 class="post-title">${post.title}</h3>
+                        <p class="post-excerpt">${post.excerpt}</p>
+                        <div class="post-tags">
+                            ${post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                postsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <p>No posts yet. Be the first to write!</p>
+                        <button class="btn-primary" onclick="window.location.hash='create'">
+                            Create First Post
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    updateStats() {
+        const postCount = document.getElementById('post-count');
+        const followerCount = document.getElementById('follower-count');
+        const followingCount = document.getElementById('following-count');
+
+        if (postCount) postCount.textContent = this.posts.length;
+        if (followerCount) followerCount.textContent = '0';
+        if (followingCount) followingCount.textContent = '0';
+    }
+
+    updateCharCounter() {
+        const content = document.getElementById('post-content');
+        const counter = document.getElementById('char-count');
+        if (content && counter) {
+            counter.textContent = content.value.length;
+        }
+    }
+
+    async handlePostSubmit() {
+        if (!this.currentUser) {
+            this.showNotification('Please login to create posts!', 'error');
+            this.showSection('auth');
+            return;
+        }
+
+        const title = document.getElementById('post-title').value;
+        const content = document.getElementById('post-content').value;
+        const tags = document.getElementById('post-tags').value;
+
+        if (!title || !content) {
+            this.showNotification('Please fill in both title and content!', 'error');
+            return;
+        }
+
+        this.showLoading();
+
+        try {
+            // Simulate API call - replace with actual worker endpoint
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Update nav items
-            document.querySelectorAll('.guest-only').forEach(el => {
-                el.style.display = 'block';
-            });
-            document.querySelectorAll('.auth-only').forEach(el => {
-                el.style.display = 'none';
-            });
+            // Add to local posts array
+            const newPost = {
+                id: Date.now().toString(),
+                title,
+                excerpt: content.substring(0, 150) + '...',
+                author: this.currentUser.display_name,
+                date: new Date().toISOString(),
+                tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+            };
+            
+            this.posts.unshift(newPost);
+            
+            this.showNotification('Post published successfully! 🎉', 'success');
+            document.getElementById('post-form').reset();
+            this.updateCharCounter();
+            this.renderPosts();
+            this.updateStats();
+            window.location.hash = 'posts';
+            
+        } catch (error) {
+            this.showNotification('Failed to publish post: ' + error.message, 'error');
+        } finally {
+            this.hideLoading();
         }
     }
 
@@ -225,7 +397,7 @@ class TeleBlogApp {
             existingNotification.remove();
         }
 
-        // Create new notification
+        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
@@ -233,7 +405,51 @@ class TeleBlogApp {
             <button class="notification-close">&times;</button>
         `;
 
-        // Add to page
+        // Add styles if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 16px 20px;
+                    border-radius: 8px;
+                    color: white;
+                    z-index: 1000;
+                    transform: translateX(400px);
+                    transition: transform 0.3s ease;
+                    max-width: 400px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                .notification.show {
+                    transform: translateX(0);
+                }
+                .notification-success {
+                    background: #10b981;
+                }
+                .notification-error {
+                    background: #ef4444;
+                }
+                .notification-info {
+                    background: #3b82f6;
+                }
+                .notification-close {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 20px;
+                    cursor: pointer;
+                    margin-left: 15px;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+
         document.body.appendChild(notification);
 
         // Show notification
@@ -262,232 +478,6 @@ class TeleBlogApp {
         });
     }
 
-    // ... rest of your existing methods (loadUserData, loadPosts, etc.)
-
-    async init() {
-        console.log('🚀 Initializing Modern TeleBlog...');
-        
-        // Load theme preference
-        this.loadThemePreference(); 
-        // Initialize components
-        this.setupNavigation();
-        this.setupEventListeners();
-        this.loadUserData();
-        this.loadPosts();
-        
-        // Hide loading
-        this.hideLoading();
-    }
-
-    loadThemePreference() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
-    } 
-
-    setupNavigation() {
-        // Handle hash changes for SPA navigation
-        window.addEventListener('hashchange', () => {
-            this.handleRouteChange();
-        });
-
-        // Handle initial route
-        this.handleRouteChange();
-    }
-
-    handleRouteChange() {
-    const hash = window.location.hash.substring(1) || 'home';
-    this.showSection(hash);
-    
-    // Add this to handle mobile menu closing
-    this.closeMobileMenu();
-    }
-
-    closeMobileMenu() {
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-        if (mobileMenu && navLinks) {
-            mobileMenu.classList.remove('active');
-            navLinks.classList.remove('active');
-        }
-    }
-
-    showSection(sectionId) {
-    // Don't show protected sections to guests
-    const protectedSections = ['posts', 'create', 'profile'];
-    if (!this.currentUser && protectedSections.includes(sectionId)) {
-        this.showNotification('Please login to access this section!', 'error');
-        this.showSection('auth');
-        return;
-    }
-
-    // Hide all sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    // Update navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-
-    // Show target section
-    const targetSection = document.getElementById(sectionId);
-    const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
-    
-    if (targetSection && targetNav) {
-        targetSection.classList.add('active');
-        targetNav.classList.add('active');
-        this.currentSection = sectionId;
-    }
-    } 
-    
-        async loadUserData() {
-        // Update to match your new user structure
-        this.currentUser = {
-            name: 'TeleBlog User',
-            username: '@teleblogger',
-            type: 'Content Creator',
-            joinDate: new Date().toISOString(),
-            stats: {
-                posts: 0,
-                followers: '0',
-                following: '0'
-            }
-        };
-
-        this.updateUserUI();
-    }
-
-    async loadPosts() {
-        // Simulate posts loading
-        this.posts = [
-            {
-                title: 'Welcome to TeleBlog!',
-                excerpt: 'Start your blogging journey with us...',
-                author: 'TeleBlog Team',
-                date: new Date().toISOString()
-            }
-        ];
-
-        this.renderPosts();
-        this.updateStats();
-    }
-
-    updateUserUI() {
-        const greeting = document.getElementById('user-greeting');
-        const profileName = document.getElementById('profile-name');
-        const profileUsername = document.getElementById('profile-username');
-        const profileType = document.getElementById('profile-type');
-        const postCount = document.getElementById('post-count');
-        const followerCount = document.getElementById('follower-count');
-        const followingCount = document.getElementById('following-count');
-
-        if (this.currentUser) {
-            if (greeting) greeting.textContent = `Welcome back, ${this.currentUser.name}!`;
-            if (profileName) profileName.textContent = this.currentUser.name;
-            if (profileUsername) profileUsername.textContent = this.currentUser.username;
-            if (profileType) profileType.textContent = this.currentUser.type;
-            if (postCount) postCount.textContent = this.currentUser.stats.posts;
-            if (followerCount) followerCount.textContent = this.currentUser.stats.followers;
-            if (followingCount) followingCount.textContent = this.currentUser.stats.following;
-        }
-    }
-
-    renderPosts() {
-        const postsContainer = document.getElementById('posts-container');
-        const featuredContainer = document.getElementById('featured-posts');
-
-        // For main posts feed with new card design
-        if (postsContainer) {
-            postsContainer.innerHTML = this.posts.length > 0 ? 
-                this.posts.map(post => `
-                    <div class="post-card modern-card">
-                        <div class="post-header">
-                            <div class="user-info">
-                                <div class="avatar"></div>
-                                <div>
-                                    <span class="post-author">${post.author}</span>
-                                    <span class="post-date">${this.formatDate(post.date)}</span>
-                                </div>
-                            </div>
-                            <button class="menu-btn">⋯</button>
-                        </div>
-                        <h3 class="post-title">${post.title}</h3>
-                        <p class="post-excerpt">${post.excerpt}</p>
-                        <div class="post-actions">
-                            <button class="action-btn">❤️ ${post.likes || 0}</button>
-                            <button class="action-btn">💬 ${post.comments || 0}</button>
-                            <button class="action-btn">🔄 ${post.shares || 0}</button>
-                        </div>
-                    </div>
-                `).join('') :
-                '<div class="empty-state">No posts yet. Start writing your first post!</div>';
-        }
-
-        // For featured posts (if you have a featured section)
-        if (featuredContainer && this.posts.length > 0) {
-            featuredContainer.innerHTML = this.posts.slice(0, 3).map(post => `
-                <div class="featured-post modern-card">
-                    <h4>${post.title}</h4>
-                    <p>${post.excerpt}</p>
-                    <span class="featured-badge">Featured</span>
-                </div>
-            `).join('');
-        }
-    }
-
-    updateStats() {
-        // const livePosts = document.getElementById('live-posts');
-        // const totalPosts = document.getElementById('total-posts');
-        // const publishedPosts = document.getElementById('published-posts');
-        // const draftPosts = document.getElementById('draft-posts');
-
-        // if (livePosts) livePosts.textContent = this.posts.length;
-        // if (totalPosts) totalPosts.textContent = this.posts.length;
-        // if (publishedPosts) publishedPosts.textContent = this.posts.length;
-        // if (draftPosts) draftPosts.textContent = '0';
-
-        const postCount = document.getElementById('post-count');
-        const followerCount = document.getElementById('follower-count');
-        const followingCount = document.getElementById('following-count');
-
-        if (postCount) postCount.textContent = this.posts.length;
-        if (followerCount) followerCount.textContent = this.currentUser?.stats.followers || '0';
-        if (followingCount) followingCount.textContent = this.currentUser?.stats.following || '0';
-    }
-
-    updateCharCounter() {
-        const content = document.getElementById('post-content');
-        const counter = document.getElementById('char-count');
-        if (content && counter) {
-            counter.textContent = content.value.length;
-        }
-    }
-
-    async handlePostSubmit() {
-        const title = document.getElementById('post-title').value;
-        const content = document.getElementById('post-content').value;
-        const tags = document.getElementById('post-tags').value;
-
-        if (!title || !content) {
-            alert('Please fill in both title and content!');
-            return;
-        }
-
-        this.showLoading();
-        
-        // Simulate API call
-        setTimeout(() => {
-            this.hideLoading();
-            alert('Post published successfully! 🎉');
-            document.getElementById('post-form').reset();
-            this.updateCharCounter();
-            window.location.hash = 'posts';
-        }, 1000);
-    }
-
     showLoading() {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('active');
@@ -499,11 +489,15 @@ class TeleBlogApp {
     }
 
     formatDate(dateString) {
-        return new Date(dateString).toLocaleDateString();
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     }
 }
 
-// Initialize the modern app
+// Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
     window.teleBlogApp = new TeleBlogApp();
 });

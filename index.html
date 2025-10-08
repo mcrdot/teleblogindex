@@ -3,295 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleBlog Lite - Modern Blogging</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>TeleBlog - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <!-- Modern Single Page Layout -->
-    <div class="app-container">
-        <!-- Header - Fixed -->
-        <header class="app-header">
-            <div class="header-content">
-                <!-- <h1 class="app-logo">TeleBlog</h1> -->
-                <img src="assets/images/tb-logo.png" alt="TeleBlog" class="logo">
-                <div class="user-menu">
-                    <span class="user-greeting" id="user-greeting">Hello!</span>
-                    <div class="header-actions">
-                        <button class="icon-btn" id="theme-toggle">█</button>
-                        <button class="icon-btn" id="menu-toggle">☰</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Navigation - Fixed -->
-        
-        <!-- ||||||||||||||||||||| -->
-        <!-- <nav class="main-nav">
-            <div class="nav-container">
-                <a href="#home" class="nav-item active" data-section="home">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-text">Home</span>
-                </a>
-                <a href="#posts" class="nav-item" data-section="posts">
-                    <span class="nav-icon">📚</span>
-                    <span class="nav-text">Posts</span>
-                </a>
-                <a href="#create" class="nav-item" data-section="create">
-                    <span class="nav-icon">✍️</span>
-                    <span class="nav-text">Create</span>
-                </a>
-                <a href="#profile" class="nav-item" data-section="profile">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">Profile</span>
-                </a>
-            </div>
-        </nav> -->
-        <!-- ||||||||||||||||||||| -->
-
-        <nav class="navbar">
-            <div class="nav-brand">
-                <img src="assets/images/tb-logo.png" alt="TeleBlog" class="logo">
-            </div>
-            
-            <div class="nav-links">
-                <!-- Guest Navigation -->
-                <div class="guest-only">
-                    <a href="#home" class="nav-item" data-section="home">Home</a>
-                    <a href="#auth" class="nav-item" data-section="auth">Login</a>
-                    <a href="#about" class="nav-item" data-section="about">About</a>
-                </div>
-                
-                <!-- Authenticated Navigation -->
-                <div class="auth-only" style="display: none;">
-                    <a href="#home" class="nav-item" data-section="home">Home</a>
-                    <a href="#posts" class="nav-item" data-section="posts">Posts</a>
-                    <a href="#create" class="nav-item" data-section="create">Write</a>
-                    <a href="#profile" class="nav-item" data-section="profile">Profile</a>
-                    <button id="logout-btn" class="nav-item logout-btn">Logout</button>
-                </div>
-            </div>
-            
-            <div class="mobile-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </nav>
-
-
-
-        <!-- Main Content - Dynamic Sections -->
-        <!-- ||||||||||||||||||||||||||||||| -->
-        <main class="app-main">
-        <!-- ||||||||||||||||||||||||||||||| -->
-            <!-- Auth Section -->
-            <section id="auth" class="content-section">
-                <div class="auth-container">
-                    <div class="auth-card modern-card">
-                        <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
-                        
-                        <!-- Login Form -->
-                        <form id="login-form" class="auth-form active">
-                            <h2>Welcome Back</h2>
-                            <p class="auth-subtitle">Sign in to your account</p>
-                            
-                            <div class="form-group">
-                                <input type="email" id="login-email" placeholder="Email address" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <input type="password" id="login-password" placeholder="Password" required>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary full-width">Sign In</button>
-                            
-                            <div class="auth-links">
-                                <a href="#" id="forgot-password">Forgot password?</a>
-                                <a href="#" id="show-signup">Don't have an account? Sign up</a>
-                            </div>
-                        </form>
-
-                        <!-- Signup Form -->
-                        <form id="signup-form" class="auth-form">
-                            <h2>Create Account</h2>
-                            <p class="auth-subtitle">Join the TeleBlog community</p>
-                            
-                            <div class="form-group">
-                                <input type="text" id="signup-fullname" placeholder="Full name" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <input type="email" id="signup-email" placeholder="Email address" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" required>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary full-width">Create Account</button>
-                            
-                            <div class="auth-links">
-                                <a href="#" id="show-login">Already have an account? Sign in</a>
-                            </div>
-                        </form>
-
-                        <!-- Forgot Password Form -->
-                        <form id="forgot-password-form" class="auth-form">
-                            <h2>Reset Password</h2>
-                            <p class="auth-subtitle">Enter your email to reset password</p>
-                            
-                            <div class="form-group">
-                                <input type="email" id="reset-email" placeholder="Email address" required>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary full-width">Send Reset Instructions</button>
-                            
-                            <div class="auth-links">
-                                <a href="#" id="show-login-from-forgot">Back to sign in</a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Home Section -->
-            <section id="home" class="content-section active">
-                <div class="hero-banner">
-                    <h2>Welcome to TeleBlog</h2>
-                    <p>Your modern blogging space in Telegram</p>
-                    <button class="cta-button" data-section="create">Start Writing</button>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-info">
-                            <h3>Live Posts</h3>
-                            <p class="stat-number" id="live-posts">0</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-info">
-                            <h3>Community</h3>
-                            <p class="stat-number" id="community-count">New</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="featured-section">
-                    <h3 class="section-title">Trending Now</h3>
-                    <div class="posts-grid" id="featured-posts">
-                        <!-- Dynamic featured posts -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Posts Section -->
-            <section id="posts" class="content-section">
-                <div class="section-header">
-                    <h2>All Posts</h2>
-                    <div class="filter-controls">
-                        <select class="filter-select" id="posts-filter">
-                            <option value="latest">Latest</option>
-                            <option value="popular">Popular</option>
-                            <option value="featured">Featured</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="posts-feed" id="posts-feed">
-                    <!-- Dynamic posts feed -->
-                </div>
-            </section>
-
-            <!-- Create Section -->
-            <section id="create" class="content-section">
-                <div class="create-container">
-                    <h2>Create New Post</h2>
-                    <form class="post-form" id="post-form">
-                        <div class="form-group">
-                            <input type="text" class="form-input" id="post-title" 
-                                   placeholder="Post title..." required>
-                        </div>
-                        <div class="form-group">
-                            <textarea class="form-textarea" id="post-content" 
-                                      placeholder="Share your thoughts..." 
-                                      maxlength="4000" required></textarea>
-                            <div class="char-counter">
-                                <span id="char-count">0</span>/4000
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" class="form-input" id="post-tags" 
-                                   placeholder="Add tags (comma separated)">
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn-secondary" id="save-draft">
-                                Save Draft
-                            </button>
-                            <button type="submit" class="btn-primary" id="publish-post">
-                                Publish
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Profile Section -->
-            <section id="profile" class="content-section">
-                <div class="profile-container">
-                    <div class="profile-header">
-                        <div class="avatar-large" id="user-avatar">👤</div>
-                        <div class="profile-info">
-                            <h2 id="profile-name">User Name</h2>
-                            <p id="profile-type">User Type</p>
-                            <p id="profile-stats">0 posts published</p>
-                        </div>
-                    </div>
-
-                    <div class="profile-stats-grid">
-                        <div class="profile-stat">
-                            <span class="stat-value" id="total-posts">0</span>
-                            <span class="stat-label">Total Posts</span>
-                        </div>
-                        <div class="profile-stat">
-                            <span class="stat-value" id="published-posts">0</span>
-                            <span class="stat-label">Published</span>
-                        </div>
-                        <div class="profile-stat">
-                            <span class="stat-value" id="draft-posts">0</span>
-                            <span class="stat-label">Drafts</span>
-                        </div>
-                    </div>
-
-                    <div class="profile-actions">
-                        <button class="profile-action-btn" id="edit-profile">
-                            Edit Profile
-                        </button>
-                        <button class="profile-action-btn" id="user-settings">
-                            Settings
-                        </button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loading-overlay">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <p>Loading your experience...</p>
-            </div>
-        </div>
+    <div id="loading-overlay" class="loading-overlay active">
+        <div class="spinner"></div>
     </div>
 
-    <!-- Scripts -->
-    <script src="config.js"></script>
-    <script src="scripts/telegram-webapp.js"></script>
-    <script src="scripts/supabase-client.js"></script>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="assets/images/tb-logo.png" alt="TeleBlog" class="logo">
+        </div>
+        <div class="nav-links">
+            <div class="guest-only">
+                <a href="#home" class="nav-item" data-section="home">Home</a>
+                <a href="#auth" class="nav-item" data-section="auth">Login</a>
+            </div>
+            <div class="auth-only" style="display: none;">
+                <a href="#home" class="nav-item" data-section="home">Home</a>
+                <a href="#posts" class="nav-item" data-section="posts">Posts</a>
+                <a href="#create" class="nav-item" data-section="create">Write</a>
+                <a href="#profile" class="nav-item" data-section="profile">Profile</a>
+                <button id="logout-btn" class="nav-item logout-btn">Logout</button>
+            </div>
+        </div>
+        <div class="mobile-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="content-section active">
+        <div class="container">
+            <h1>Welcome to TeleBlog</h1>
+            <p>Your decentralized blogging platform on Telegram</p>
+        </div>
+    </section>
+
+    <!-- Auth Section -->
+    <section id="auth" class="content-section">
+        <div class="auth-container">
+            <div class="auth-card modern-card">
+                <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
+                <div class="telegram-auth">
+                    <h2>Welcome to TeleBlog</h2>
+                    <p class="auth-subtitle">Open in Telegram to start blogging</p>
+                    <div class="telegram-info">
+                        <p>This platform is exclusively for Telegram users.</p>
+                        <p>Please open this app through Telegram to continue.</p>
+                    </div>
+                    <button id="dev-login-btn" class="btn-secondary full-width">
+                        Development Test Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Posts Section -->
+    <section id="posts" class="content-section">
+        <div class="container">
+            <h2>Latest Posts</h2>
+            <div id="posts-container" class="posts-grid">
+                <!-- Posts will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Create Post Section -->
+    <section id="create" class="content-section">
+        <div class="container">
+            <h2>Create New Post</h2>
+            <form id="post-form" class="post-form">
+                <div class="form-group">
+                    <input type="text" id="post-title" placeholder="Post Title" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="post-content" placeholder="Write your post content..." rows="10" required></textarea>
+                    <div class="char-counter">
+                        Characters: <span id="char-count">0</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="post-tags" placeholder="Tags (comma separated)">
+                </div>
+                <button type="submit" class="btn-primary">Publish Post</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Profile Section -->
+    <section id="profile" class="content-section">
+        <div class="container">
+            <div class="profile-header">
+                <div class="avatar"></div>
+                <h2 id="profile-name">Loading...</h2>
+                <p id="profile-username">@username</p>
+                <p id="profile-type">Blogger</p>
+            </div>
+            <div class="profile-stats">
+                <div class="stat">
+                    <span id="post-count" class="stat-number">0</span>
+                    <span class="stat-label">Posts</span>
+                </div>
+                <div class="stat">
+                    <span id="follower-count" class="stat-number">0</span>
+                    <span class="stat-label">Followers</span>
+                </div>
+                <div class="stat">
+                    <span id="following-count" class="stat-number">0</span>
+                    <span class="stat-label">Following</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <script src="app.js"></script>
 </body>
 </html>
