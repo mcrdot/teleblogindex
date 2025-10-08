@@ -3,32 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleBlog - Telegram Mini App</title>
+    <title>TeleBlog - Decentralized Blogging</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles/style.css">
 </head>
-<body>
-    <div id="loading-overlay" class="loading-overlay active">
-        <div class="spinner"></div>
+<body data-theme="light">
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button id="theme-toggle-btn" class="theme-btn" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+        </button>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay active">
+        <div class="spinner"></div>
+        <p>Loading TeleBlog...</p>
+    </div>
+
+    <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-brand">
             <img src="assets/images/tb-logo.png" alt="TeleBlog" class="logo">
+            <span class="brand-text">TeleBlog</span>
         </div>
+        
         <div class="nav-links">
             <div class="guest-only">
-                <a href="#home" class="nav-item" data-section="home">Home</a>
-                <a href="#auth" class="nav-item" data-section="auth">Login</a>
+                <a href="#home" class="nav-item" data-section="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="#auth" class="nav-item" data-section="auth">
+                    <span class="nav-icon">🔐</span>
+                    <span class="nav-text">Login</span>
+                </a>
             </div>
             <div class="auth-only" style="display: none;">
-                <a href="#home" class="nav-item" data-section="home">Home</a>
-                <a href="#posts" class="nav-item" data-section="posts">Posts</a>
-                <a href="#create" class="nav-item" data-section="create">Write</a>
-                <a href="#profile" class="nav-item" data-section="profile">Profile</a>
-                <button id="logout-btn" class="nav-item logout-btn">Logout</button>
+                <a href="#home" class="nav-item" data-section="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="#posts" class="nav-item" data-section="posts">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">Posts</span>
+                </a>
+                <a href="#create" class="nav-item" data-section="create">
+                    <span class="nav-icon">✏️</span>
+                    <span class="nav-text">Write</span>
+                </a>
+                <a href="#profile" class="nav-item" data-section="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profile</span>
+                </a>
+                <button id="logout-btn" class="nav-item logout-btn">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-text">Logout</span>
+                </button>
             </div>
         </div>
+
         <div class="mobile-menu">
             <span></span>
             <span></span>
@@ -36,91 +70,244 @@
         </div>
     </nav>
 
-    <!-- Home Section -->
-    <section id="home" class="content-section active">
-        <div class="container">
-            <h1>Welcome to TeleBlog</h1>
-            <p>Your decentralized blogging platform on Telegram</p>
-        </div>
-    </section>
-
-    <!-- Auth Section -->
-    <section id="auth" class="content-section">
-        <div class="auth-container">
-            <div class="auth-card modern-card">
-                <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
-                <div class="telegram-auth">
-                    <h2>Welcome to TeleBlog</h2>
-                    <p class="auth-subtitle">Open in Telegram to start blogging</p>
-                    <div class="telegram-info">
-                        <p>This platform is exclusively for Telegram users.</p>
-                        <p>Please open this app through Telegram to continue.</p>
-                    </div>
-                    <button id="dev-login-btn" class="btn-secondary full-width">
-                        Development Test Login
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Posts Section -->
-    <section id="posts" class="content-section">
-        <div class="container">
-            <h2>Latest Posts</h2>
-            <div id="posts-container" class="posts-grid">
-                <!-- Posts will be loaded here -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Create Post Section -->
-    <section id="create" class="content-section">
-        <div class="container">
-            <h2>Create New Post</h2>
-            <form id="post-form" class="post-form">
-                <div class="form-group">
-                    <input type="text" id="post-title" placeholder="Post Title" required>
-                </div>
-                <div class="form-group">
-                    <textarea id="post-content" placeholder="Write your post content..." rows="10" required></textarea>
-                    <div class="char-counter">
-                        Characters: <span id="char-count">0</span>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="content-section active">
+            <div class="container">
+                <div class="hero-section">
+                    <h1 class="hero-title">Welcome to TeleBlog</h1>
+                    <p class="hero-subtitle">Your decentralized blogging platform on Telegram</p>
+                    <div class="hero-stats">
+                        <div class="stat-card">
+                            <span class="stat-number" id="total-posts">0</span>
+                            <span class="stat-label">Total Posts</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number" id="active-users">0</span>
+                            <span class="stat-label">Active Writers</span>
+                        </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <input type="text" id="post-tags" placeholder="Tags (comma separated)">
-                </div>
-                <button type="submit" class="btn-primary">Publish Post</button>
-            </form>
-        </div>
-    </section>
 
-    <!-- Profile Section -->
-    <section id="profile" class="content-section">
-        <div class="container">
-            <div class="profile-header">
-                <div class="avatar"></div>
-                <h2 id="profile-name">Loading...</h2>
-                <p id="profile-username">@username</p>
-                <p id="profile-type">Blogger</p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h3>Instant Publishing</h3>
+                        <p>Write and publish your thoughts instantly to the Telegram ecosystem</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Decentralized</h3>
+                        <p>Your content, your control. Built on secure, decentralized principles</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💫</div>
+                        <h3>Telegram Native</h3>
+                        <p>Seamlessly integrated with Telegram for the best user experience</p>
+                    </div>
+                </div>
             </div>
-            <div class="profile-stats">
-                <div class="stat">
-                    <span id="post-count" class="stat-number">0</span>
-                    <span class="stat-label">Posts</span>
+        </section>
+
+        <!-- Auth Section -->
+        <section id="auth" class="content-section">
+            <div class="auth-container">
+                <div class="auth-card modern-card">
+                    <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
+                    <div class="telegram-auth">
+                        <h2>Join TeleBlog</h2>
+                        <p class="auth-subtitle">Start your decentralized blogging journey</p>
+                        
+                        <div class="auth-benefits">
+                            <div class="benefit-item">
+                                <span class="benefit-icon">📝</span>
+                                <span>Write & publish posts</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span class="benefit-icon">👥</span>
+                                <span>Connect with readers</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span class="benefit-icon">🔐</span>
+                                <span>Secure Telegram login</span>
+                            </div>
+                        </div>
+
+                        <div class="telegram-info">
+                            <p>🔒 Secure authentication via Telegram</p>
+                            <p>📱 Optimized for mobile experience</p>
+                        </div>
+
+                        <button id="dev-login-btn" class="btn-secondary full-width">
+                            <span class="btn-icon">🧪</span>
+                            Development Test Login
+                        </button>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span id="follower-count" class="stat-number">0</span>
-                    <span class="stat-label">Followers</span>
+            </div>
+        </section>
+
+        <!-- Posts Section -->
+        <section id="posts" class="content-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Latest Posts</h2>
+                    <div class="section-actions">
+                        <button id="refresh-posts" class="btn-icon" title="Refresh posts">
+                            <span class="btn-icon">🔄</span>
+                        </button>
+                        <div class="filter-dropdown">
+                            <select id="posts-filter">
+                                <option value="latest">Latest</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="following">Following</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span id="following-count" class="stat-number">0</span>
-                    <span class="stat-label">Following</span>
+
+                <div class="search-box">
+                    <input type="text" id="posts-search" placeholder="Search posts...">
+                    <span class="search-icon">🔍</span>
                 </div>
+
+                <div id="posts-container" class="posts-grid">
+                    <!-- Posts will be loaded here -->
+                </div>
+
+                <div class="load-more-container">
+                    <button id="load-more-posts" class="btn-outline">Load More Posts</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Create Post Section -->
+        <section id="create" class="content-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Create New Post</h2>
+                    <button id="save-draft" class="btn-outline">Save Draft</button>
+                </div>
+
+                <form id="post-form" class="post-form">
+                    <div class="form-group">
+                        <input type="text" id="post-title" placeholder="Catchy post title..." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <textarea id="post-content" placeholder="Share your story... (Markdown supported)" rows="12" required></textarea>
+                        <div class="editor-tools">
+                            <button type="button" class="tool-btn" data-format="bold" title="Bold">B</button>
+                            <button type="button" class="tool-btn" data-format="italic" title="Italic">I</button>
+                            <button type="button" class="tool-btn" data-format="link" title="Link">🔗</button>
+                            <button type="button" class="tool-btn" data-format="code" title="Code">{"</>"}</button>
+                        </div>
+                        <div class="char-counter">
+                            <span id="char-count">0</span> characters • 
+                            <span id="word-count">0</span> words
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="post-tags" placeholder="Add tags (comma separated) e.g., technology, programming, web3">
+                        <div class="tags-preview" id="tags-preview"></div>
+                    </div>
+
+                    <div class="publish-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="is-premium">
+                            <span class="checkmark"></span>
+                            Premium content (for subscribers)
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="is-published" checked>
+                            <span class="checkmark"></span>
+                            Publish immediately
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="preview-post" class="btn-outline">Preview</button>
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-icon">🚀</span>
+                            Publish Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profile" class="content-section">
+            <div class="container">
+                <div class="profile-header">
+                    <div class="avatar-container">
+                        <div class="avatar" id="user-avatar">
+                            <span id="avatar-fallback">👤</span>
+                        </div>
+                        <button class="edit-avatar-btn" title="Change avatar">✏️</button>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <h2 id="profile-name">Loading...</h2>
+                        <p id="profile-username" class="username">@username</p>
+                        <p id="profile-bio" class="profile-bio">No bio yet</p>
+                        <button id="edit-profile-btn" class="btn-outline btn-small">
+                            <span class="btn-icon">✏️</span>
+                            Edit Profile
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-stats">
+                    <div class="stat">
+                        <span id="post-count" class="stat-number">0</span>
+                        <span class="stat-label">Posts</span>
+                    </div>
+                    <div class="stat">
+                        <span id="follower-count" class="stat-number">0</span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                    <div class="stat">
+                        <span id="following-count" class="stat-number">0</span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                    <div class="stat">
+                        <span id="view-count" class="stat-number">0</span>
+                        <span class="stat-label">Views</span>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button id="my-posts-btn" class="btn-outline active">My Posts</button>
+                    <button id="drafts-btn" class="btn-outline">Drafts</button>
+                    <button id="bookmarks-btn" class="btn-outline">Bookmarks</button>
+                </div>
+
+                <div id="profile-content" class="profile-content">
+                    <!-- User's posts/drafts will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Post Preview</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="post-preview"></div>
             </div>
         </div>
-    </section>
+    </div>
 
     <script src="app.js"></script>
 </body>
