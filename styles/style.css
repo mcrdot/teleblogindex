@@ -17,7 +17,7 @@
   --error: #ff3b30;
   --surface: #ffffff;
   --surface-elevated: #f8f9fa;
-  --border: #e5e5e7;
+  --border: #424242;
   --text-primary: #000000;
   --text-secondary: #707579;
   --text-tertiary: #999999;
@@ -110,7 +110,7 @@ body {
 .navbar {
   background: var(--surface-elevated);
   border-bottom: 1px solid var(--border);
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-md) var(--space-xl);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -125,8 +125,8 @@ body {
 }
 
 .logo {
-  width: 32px;
-  height: 32px;
+  width: 110px;
+  height: auto;
   border-radius: 8px;
 }
 
@@ -160,7 +160,7 @@ body {
 
 .nav-item:hover,
 .nav-item.active {
-  background: var(--primary);
+  background: var(--text-primary);
   color: white;
 }
 
@@ -297,8 +297,8 @@ body {
 /* Auth section - Redesigned */
 .auth-container {
   padding: var(--space-xl) var(--space-lg);
-  max-width: 400px;
-  margin: 0 auto;
+  max-width: 80%;
+  margin: 10px auto;
 }
 
 .auth-card {
@@ -311,8 +311,8 @@ body {
 }
 
 .auth-logo {
-  width: 64px;
-  height: 64px;
+  width: 130px;
+  height: auto;
   border-radius: var(--radius-md);
   margin: 0 auto var(--space-lg);
   display: block;
@@ -335,7 +335,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-md);
 }
 
 .benefit-item {
@@ -741,7 +741,7 @@ body {
 
 .mobile-menu span {
   width: 20px;
-  height: 2px;
+  height: 5px;
   background: var(--text-primary);
   transition: all 0.3s ease;
 }
