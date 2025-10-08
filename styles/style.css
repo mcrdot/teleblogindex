@@ -42,7 +42,7 @@
 
 [data-theme="dark"] {
   /* Telegram-inspired Dark Theme */
-  --tg-theme-bg-color: #0f0f0f;
+  --tg-theme-bg-color: #2d2822;
   --tg-theme-text-color: #ffffff;
   --tg-theme-hint-color: #aaaaaa;
   --tg-theme-link-color: #5eabe1;
@@ -87,7 +87,7 @@ body {
 }
 
 .theme-btn {
-  background: var(--surface-elevated);
+  background: #4c4234;
   border: 1px solid var(--border);
   border-radius: 50%;
   width: 44px;
@@ -98,7 +98,7 @@ body {
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .theme-btn:hover {
@@ -108,7 +108,7 @@ body {
 
 /* Navigation - Telegram Style */
 .navbar {
-  background: var(--surface-elevated);
+  background: #4a4033;
   border-bottom: 1px solid var(--border);
   padding: var(--space-md) var(--space-xl);
   position: sticky;
@@ -156,6 +156,7 @@ body {
   cursor: pointer;
   font-size: 15px;
   font-weight: 500;
+  margin-right: 4px;
 }
 
 .nav-item:hover,
@@ -195,18 +196,20 @@ body {
 .hero-section {
   padding: var(--space-xl) var(--space-lg);
   text-align: center;
-  background: linear-gradient(135deg, var(--surface-elevated) 0%, var(--surface) 100%);
+  background: linear-gradient(180deg, #2d2822 0%, #4a4033 70%);
   border-bottom: 1px solid var(--border);
+  border-radius: 16px;
 }
 
 .hero-title {
   font-size: 32px;
   font-weight: 800;
   margin-bottom: var(--space-sm);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(90deg, #f5d52a 0%, var(--primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 12px #000000 ;
 }
 
 .hero-subtitle {
