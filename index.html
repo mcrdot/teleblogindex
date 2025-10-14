@@ -6,6 +6,8 @@
     <title>TeleBlog - Decentralized Blogging</title>
     <!-- <script src="https://telegram.org/js/telegram-web-app.js"></script> -->
     <link rel="stylesheet" href="styles/style.css">
+    <!-- Lucide ico CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
 
 <link rel="icon" type="assets/icons/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
 <link rel="shortcut icon" href="/favicon.ico">
@@ -14,7 +16,8 @@
     <!-- Theme Toggle -->
     <div class="theme-toggle">
         <button id="theme-toggle-btn" class="theme-btn" aria-label="Toggle theme">
-            <span class="theme-icon">🌙</span>
+            <div class="icon-settings"></div>
+            <!-- <span class="theme-icon">🌙</span> -->
         </button>
     </div>
 
@@ -34,34 +37,41 @@
         <div class="nav-links">
             <div class="guest-only">
                 <a href="#home" class="nav-item" data-section="home">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-text">Home</span>
+                    <div class="icon-house"></div>
+                    <!-- <span class="nav-icon">🏠</span> -->
+                    <!-- <span class="nav-text">Home</span> -->
                 </a>
                 <a href="#auth" class="nav-item" data-section="auth">
-                    <span class="nav-icon">🔐</span>
-                    <span class="nav-text">Login</span>
+                    <div class="icon-key-round"></div>
+                    <!-- <span class="nav-icon">🔐</span> -->
+                    <!-- <span class="nav-text">Login</span> -->
                 </a>
             </div>
             <div class="auth-only" style="display: none;">
                 <a href="#home" class="nav-item" data-section="home">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-text">Home</span>
+                    <div class="icon-house"></div>
+                    <!-- <span class="nav-icon">🏠</span> -->
+                    <!-- <span class="nav-text">Home</span> -->
                 </a>
                 <a href="#posts" class="nav-item" data-section="posts">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">Posts</span>
+                    <div class="icon-newspaper"></div>
+                    <!-- <span class="nav-icon">📝</span> -->
+                    <!-- <span class="nav-text">Posts</span> -->
                 </a>
                 <a href="#create" class="nav-item" data-section="create">
-                    <span class="nav-icon">✏️</span>
-                    <span class="nav-text">Write</span>
+                    <div class="icon-pencil-line"></div>
+                    <!-- <span class="nav-icon">✏️</span> -->
+                    <!-- <span class="nav-text">Write</span> -->
                 </a>
                 <a href="#profile" class="nav-item" data-section="profile">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">Profile</span>
+                    <div class="icon-user"></div>
+                    <!-- <span class="nav-icon">👤</span> -->
+                    <!-- <span class="nav-text">Profile</span> -->
                 </a>
                 <button id="logout-btn" class="nav-item logout-btn">
-                    <span class="nav-icon">🚪</span>
-                    <span class="nav-text">Logout</span>
+                    <div class="icon-log-out"></div>
+                    <!-- <span class="nav-icon">🚪</span> -->
+                    <!-- <span class="nav-text">Logout</span> -->
                 </button>
             </div>
         </div>

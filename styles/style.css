@@ -87,7 +87,7 @@ body {
 }
 
 .theme-btn {
-  background: #4c4234;
+  background: #2d2822;
   border: 1px solid var(--border);
   border-radius: 50%;
   width: 44px;
@@ -99,11 +99,13 @@ body {
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   font-size: 22px;
+  color: #ddd9c3;
 }
 
 .theme-btn:hover {
+  color: #f5d529;
   transform: scale(1.05);
-  box-shadow: var(--shadow-md);
+  /* box-shadow: var(--shadow-md); */
 }
 
 /* Navigation - Telegram Style */
