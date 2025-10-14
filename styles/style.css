@@ -163,7 +163,7 @@ body {
 
 .nav-item:hover,
 .nav-item.active {
-  background: var(--text-primary);
+  background: #4a4033;
   color: white;
 }
 
