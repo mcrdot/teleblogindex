@@ -7,7 +7,7 @@ class TeleBlogApp {
         this.drafts = [];
         this.bookmarks = [];
         this.jwtToken = localStorage.getItem('teleblog_token');
-        this.currentTheme = localStorage.getItem('teleblog_theme') || 'light';
+        this.currentTheme = localStorage.getItem('teleblog_theme') || 'default';
         this.isLoading = false;
         
         this.init();
@@ -35,27 +35,188 @@ class TeleBlogApp {
         this.setupServiceWorker();
     }
 
-    // Theme Management
+    // Enhanced Theme Management
     initTheme() {
         document.body.setAttribute('data-theme', this.currentTheme);
-        this.updateThemeToggle();
+        this.updateThemeSelection();
     }
 
-    toggleTheme() {
-        this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(themeName) {
+        this.currentTheme = themeName;
         document.body.setAttribute('data-theme', this.currentTheme);
         localStorage.setItem('teleblog_theme', this.currentTheme);
-        this.updateThemeToggle();
-        this.showToast(`Switched to ${this.currentTheme} mode`, 'success');
+        this.updateThemeSelection();
+        this.showToast(`Theme changed to ${this.getThemeDisplayName(themeName)}`, 'success');
     }
 
-    updateThemeToggle() {
-        const themeBtn = document.getElementById('theme-toggle-btn');
-        if (themeBtn) {
-            const icon = themeBtn.querySelector('.theme-icon');
-            if (icon) {
-                icon.textContent = this.currentTheme === 'light' ? '🌙' : '☀️';
+    getThemeDisplayName(themeName) {
+        const themeNames = {
+            'default': 'TeleBlog Theme',
+            'telegram-light': 'Telegram Light',
+            'telegram-dark': 'Telegram Dark'
+        };
+        return themeNames[themeName] || themeName;
+    }
+
+    updateThemeSelection() {
+        // Update theme option highlights
+        document.querySelectorAll('.theme-option').forEach(option => {
+            if (option.dataset.theme === this.currentTheme) {
+                option.classList.add('active');
+            } else {
+                option.classList.remove('active');
             }
+        });
+    }
+
+    // Settings Management
+    openSettings() {
+        document.getElementById('settings-overlay').classList.add('active');
+    }
+
+    closeSettings() {
+        document.getElementById('settings-overlay').classList.remove('active');
+    }
+
+    // Enhanced Event Listeners
+    setupEventListeners() {
+        // Settings button
+        document.getElementById('settings-btn')?.addEventListener('click', () => this.openSettings());
+        
+        // Settings back button
+        document.getElementById('settings-back-btn')?.addEventListener('click', () => this.closeSettings());
+        
+        // Theme selection
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                this.setTheme(option.dataset.theme);
+            });
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                window.location.hash = section;
+            });
+        });
+
+        // Logout
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleLogout();
+        });
+
+        // Development login
+        document.getElementById('dev-login-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleDevLogin();
+        });
+
+        // Post form
+        const postForm = document.getElementById('post-form');
+        if (postForm) {
+            postForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handlePostSubmit();
+            });
+        }
+
+        // Save draft
+        document.getElementById('save-draft')?.addEventListener('click', () => this.saveDraft());
+
+        // Character counter
+        const postContent = document.getElementById('post-content');
+        if (postContent) {
+            postContent.addEventListener('input', () => this.updateCharCounter());
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('posts-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const filter = document.getElementById('posts-filter')?.value || 'latest';
+                this.loadPosts(filter, e.target.value);
+            });
+        }
+
+        // Filter changes
+        const postsFilter = document.getElementById('posts-filter');
+        if (postsFilter) {
+            postsFilter.addEventListener('change', (e) => {
+                const searchQuery = document.getElementById('posts-search')?.value || '';
+                this.loadPosts(e.target.value, searchQuery);
+            });
+        }
+
+        // Mobile menu (removed since we have bottom nav now)
+        // const mobileMenu = document.querySelector('.mobile-menu');
+        // const navLinks = document.querySelector('.nav-links');
+        // if (mobileMenu && navLinks) {
+        //     mobileMenu.addEventListener('click', () => {
+        //         mobileMenu.classList.toggle('active');
+        //         navLinks.classList.toggle('active');
+        //     });
+        // }
+
+        // Profile tabs
+        document.getElementById('my-posts-btn')?.addEventListener('click', () => this.switchProfileTab('my-posts'));
+        document.getElementById('drafts-btn')?.addEventListener('click', () => this.switchProfileTab('drafts'));
+        document.getElementById('bookmarks-btn')?.addEventListener('click', () => this.switchProfileTab('bookmarks'));
+    }
+
+    // Enhanced Navigation
+    setupNavigation() {
+        window.addEventListener('hashchange', () => this.handleRouteChange());
+        this.handleRouteChange();
+    }
+
+    handleRouteChange() {
+        const hash = window.location.hash.substring(1) || 'home';
+        this.showSection(hash);
+    }
+
+    showSection(sectionId) {
+        const protectedSections = ['posts', 'create', 'profile'];
+        if (!this.currentUser && protectedSections.includes(sectionId)) {
+            this.showToast('Please login with Telegram to access this section!', 'error');
+            this.showSection('auth');
+            return;
+        }
+
+        // Hide all sections
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Update navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Show target section
+        const targetSection = document.getElementById(sectionId);
+        const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
+        
+        if (targetSection && targetNav) {
+            targetSection.classList.add('active');
+            targetNav.classList.add('active');
+            this.currentSection = sectionId;
+        }
+
+        // Load section-specific data
+        this.loadSectionData(sectionId);
+    }
+
+    loadSectionData(sectionId) {
+        switch (sectionId) {
+            case 'posts':
+                this.loadPosts();
+                break;
+            case 'profile':
+                this.loadUserStats();
+                break;
         }
     }
 
@@ -519,137 +680,6 @@ class TeleBlogApp {
                 charCounter.style.color = 'inherit';
             }
         }
-    }
-
-    // Enhanced Navigation and UI
-    setupNavigation() {
-        window.addEventListener('hashchange', () => this.handleRouteChange());
-        this.handleRouteChange();
-    }
-
-    handleRouteChange() {
-        const hash = window.location.hash.substring(1) || 'home';
-        this.showSection(hash);
-    }
-
-    showSection(sectionId) {
-        const protectedSections = ['posts', 'create', 'profile'];
-        if (!this.currentUser && protectedSections.includes(sectionId)) {
-            this.showToast('Please login with Telegram to access this section!', 'error');
-            this.showSection('auth');
-            return;
-        }
-
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(section => {
-            section.classList.remove('active');
-        });
-
-        // Update navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Show target section
-        const targetSection = document.getElementById(sectionId);
-        const targetNav = document.querySelector(`[data-section="${sectionId}"]`);
-        
-        if (targetSection && targetNav) {
-            targetSection.classList.add('active');
-            targetNav.classList.add('active');
-            this.currentSection = sectionId;
-        }
-
-        // Load section-specific data
-        this.loadSectionData(sectionId);
-    }
-
-    loadSectionData(sectionId) {
-        switch (sectionId) {
-            case 'posts':
-                this.loadPosts();
-                break;
-            case 'profile':
-                this.loadUserStats();
-                break;
-        }
-    }
-
-    setupEventListeners() {
-        // Theme toggle
-        document.getElementById('theme-toggle-btn')?.addEventListener('click', () => this.toggleTheme());
-        
-        // Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const section = item.dataset.section;
-                window.location.hash = section;
-            });
-        });
-
-        // Logout
-        document.getElementById('logout-btn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.handleLogout();
-        });
-
-        // Development login
-        document.getElementById('dev-login-btn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.handleDevLogin();
-        });
-
-        // Post form
-        const postForm = document.getElementById('post-form');
-        if (postForm) {
-            postForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handlePostSubmit();
-            });
-        }
-
-        // Save draft
-        document.getElementById('save-draft')?.addEventListener('click', () => this.saveDraft());
-
-        // Character counter
-        const postContent = document.getElementById('post-content');
-        if (postContent) {
-            postContent.addEventListener('input', () => this.updateCharCounter());
-        }
-
-        // Search functionality
-        const searchInput = document.getElementById('posts-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const filter = document.getElementById('posts-filter')?.value || 'latest';
-                this.loadPosts(filter, e.target.value);
-            });
-        }
-
-        // Filter changes
-        const postsFilter = document.getElementById('posts-filter');
-        if (postsFilter) {
-            postsFilter.addEventListener('change', (e) => {
-                const searchQuery = document.getElementById('posts-search')?.value || '';
-                this.loadPosts(e.target.value, searchQuery);
-            });
-        }
-
-        // Mobile menu
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-        if (mobileMenu && navLinks) {
-            mobileMenu.addEventListener('click', () => {
-                mobileMenu.classList.toggle('active');
-                navLinks.classList.toggle('active');
-            });
-        }
-
-        // Profile tabs
-        document.getElementById('my-posts-btn')?.addEventListener('click', () => this.switchProfileTab('my-posts'));
-        document.getElementById('drafts-btn')?.addEventListener('click', () => this.switchProfileTab('drafts'));
-        document.getElementById('bookmarks-btn')?.addEventListener('click', () => this.switchProfileTab('bookmarks'));
     }
 
     // Profile Tabs
