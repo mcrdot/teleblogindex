@@ -4,31 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleBlog - Decentralized Blogging</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles/style.css">
-    <!-- Lucide icon CDN -->
-    <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
-    <link rel="icon" type="assets/icons/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body data-theme="default">
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay active">
+    <div id="loading-overlay" class="loading-overlay">
         <div class="spinner"></div>
         <p>Loading TeleBlog...</p>
     </div>
 
-    <!-- NEW: Sticky Header -->
+    <!-- Sticky Header -->
     <header class="sticky-header">
         <div class="header-content">
             <img src="assets/images/tb-logo.png" alt="TeleBlog" class="header-logo">
-            <button id="settings-btn" class="settings-btn" aria-label="Open settings">
+            <button id="settings-btn" class="settings-btn">
                 <div class="icon-settings"></div>
             </button>
         </div>
     </header>
 
-    <!-- NEW: Bottom Navigation -->
+    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <div class="guest-only">
@@ -62,7 +60,7 @@
         </div>
     </nav>
 
-    <!-- NEW: Full-screen Settings -->
+    <!-- Settings Overlay -->
     <div id="settings-overlay" class="settings-overlay">
         <div class="settings-header">
             <button id="settings-back-btn" class="settings-back-btn">
@@ -70,55 +68,45 @@
                 Back
             </button>
             <h2 class="settings-title">Settings</h2>
-            <div style="width: 44px;"></div> <!-- Spacer for balance -->
+            <div style="width: 44px;"></div>
         </div>
         
         <div class="settings-content">
-            <h3 style="margin-bottom: var(--space-lg); color: var(--text-primary);">Choose Theme</h3>
+            <h3>Choose Theme</h3>
             
             <div class="theme-option" data-theme="default">
+                <div class="theme-checkbox"></div>
                 <div class="theme-info">
-                    <div class="theme-preview teleblog-theme"></div>
-                    <div>
-                        <div class="theme-name">TeleBlog Theme</div>
-                        <div style="font-size: 12px; color: var(--text-secondary);">Default</div>
-                    </div>
+                    <div class="theme-name">TeleBlog Theme</div>
+                    <div class="theme-description">Default dark theme</div>
                 </div>
-                <div class="theme-check">✓</div>
             </div>
             
             <div class="theme-option" data-theme="telegram-light">
+                <div class="theme-checkbox"></div>
                 <div class="theme-info">
-                    <div class="theme-preview telegram-light"></div>
-                    <div>
-                        <div class="theme-name">Telegram Light</div>
-                        <div style="font-size: 12px; color: var(--text-secondary);">Native look</div>
-                    </div>
+                    <div class="theme-name">Telegram Light</div>
+                    <div class="theme-description">Native light theme</div>
                 </div>
-                <div class="theme-check">✓</div>
             </div>
             
             <div class="theme-option" data-theme="telegram-dark">
+                <div class="theme-checkbox"></div>
                 <div class="theme-info">
-                    <div class="theme-preview telegram-dark"></div>
-                    <div>
-                        <div class="theme-name">Telegram Dark</div>
-                        <div style="font-size: 12px; color: var(--text-secondary);">Native look</div>
-                    </div>
+                    <div class="theme-name">Telegram Dark</div>
+                    <div class="theme-description">Native dark theme</div>
                 </div>
-                <div class="theme-check">✓</div>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Home Section -->
         <section id="home" class="content-section active">
             <div class="container">
                 <div class="hero-section">
                     <h1 class="hero-title">Welcome to TeleBlog</h1>
-                    <p class="hero-subtitle">Your decentralized blogging platform on Telegram</p>
+                    <p class="hero-subtitle">Your decentralized blogging platform</p>
                     <div class="hero-stats">
                         <div class="stat-card">
                             <span class="stat-number" id="total-posts">0</span>
@@ -130,50 +118,105 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🚀</div>
-                        <h3>Instant Publishing</h3>
-                        <p>Write and publish your thoughts instantly to the Telegram ecosystem</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🔒</div>
-                        <h3>Decentralized</h3>
-                        <p>Your content, your control. Built on secure, decentralized principles</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">💫</div>
-                        <h3>Telegram Native</h3>
-                        <p>Seamlessly integrated with Telegram for the best user experience</p>
+        <section id="auth" class="content-section">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
+                    <div class="telegram-auth">
+                        <h2>Join TeleBlog</h2>
+                        <p class="auth-subtitle">Start your blogging journey</p>
+                        
+                        <!-- Telegram Login Button -->
+                        <button id="telegram-login-btn" class="btn-telegram" style="display: none;">
+                            <div class="icon-telegram"></div>
+                            <span>Login with Telegram</span>
+                        </button>
+                        
+                        <button id="dev-login-btn" class="btn-primary">
+                            Development Test Login
+                        </button>
+                        
+                        <div class="telegram-info">
+                            <p>📱 <strong>Telegram Users:</strong> Login automatically when opening from Telegram</p>
+                            <p>🔄 <strong>Web Users:</strong> Use development login for testing</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Rest of your existing sections remain exactly the same -->
-        <!-- Auth Section -->
-        <section id="auth" class="content-section">
-            <!-- ... existing auth content ... -->
-        </section>
-
-        <!-- Posts Section -->
         <section id="posts" class="content-section">
-            <!-- ... existing posts content ... -->
+            <div class="container">
+                <div class="posts-header">
+                    <h2>Latest Posts</h2>
+                    <div class="posts-controls">
+                        <select id="posts-filter" class="posts-filter">
+                            <option value="latest">Latest</option>
+                            <option value="popular">Popular</option>
+                            <option value="following">Following</option>
+                        </select>
+                        <input type="text" id="posts-search" placeholder="Search posts..." class="posts-search">
+                    </div>
+                </div>
+                <div id="posts-container" class="posts-grid">
+                    <!-- Posts will be loaded here -->
+                </div>
+            </div>
         </section>
 
-        <!-- Create Post Section -->
         <section id="create" class="content-section">
-            <!-- ... existing create content ... -->
+            <div class="container">
+                <h2>Create New Post</h2>
+                <form id="post-form" class="post-form">
+                    <div class="form-group">
+                        <input type="text" id="post-title" placeholder="Post title..." required maxlength="100">
+                        <div class="char-counter" id="title-counter">0/100</div>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="post-content" placeholder="Write your post..." rows="8" required maxlength="5000"></textarea>
+                        <div class="char-counter" id="char-counter">0/5000 characters</div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Publish Post</button>
+                        <button type="button" id="save-draft" class="btn-outline">Save Draft</button>
+                    </div>
+                </form>
+            </div>
         </section>
 
-        <!-- Profile Section -->
         <section id="profile" class="content-section">
-            <!-- ... existing profile content ... -->
+            <div class="container">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <img id="profile-avatar" src="assets/images/default-avatar.png" alt="Profile Avatar">
+                    </div>
+                    <h2 id="profile-name">Profile</h2>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat-card">
+                        <span class="stat-number" id="profile-total-posts">0</span>
+                        <span class="stat-label">My Posts</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="profile-total-likes">0</span>
+                        <span class="stat-label">Total Likes</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="profile-total-views">0</span>
+                        <span class="stat-label">Total Views</span>
+                    </div>
+                </div>
+                
+                <button id="logout-btn" class="btn-outline logout-btn">Logout</button>
+            </div>
         </section>
     </main>
 
-    <!-- Toast Notifications Container -->
+    <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
     <script src="app.js"></script>
