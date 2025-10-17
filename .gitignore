@@ -20,9 +20,7 @@ ehthumbs.db
 Thumbs.db
 extrajs/
 extrajs/telegram-web-app.js
-worker/
-worker/index.js
-
+/worker/
 
 # Build outputs
 dist/
