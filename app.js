@@ -24,9 +24,12 @@ class TeleBlogApp {
         this.setupNavigation();
         this.setupEventListeners();
         
-        // Check for Telegram WebApp
+        // Show Telegram button if in Telegram environment
         if (window.Telegram?.WebApp) {
             console.log('📱 Telegram WebApp detected');
+            const telegramBtn = document.getElementById('telegram-login-btn');
+            if (telegramBtn) telegramBtn.style.display = 'flex';
+            
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
             
@@ -81,6 +84,10 @@ class TeleBlogApp {
     async handleTelegramAuth() {
         if (!window.Telegram?.WebApp) {
             this.showToast('Telegram WebApp not available', 'error');
+            
+            // Show Telegram button for manual login
+            const telegramBtn = document.getElementById('telegram-login-btn');
+            if (telegramBtn) telegramBtn.style.display = 'flex';
             return;
         }
 
@@ -91,6 +98,10 @@ class TeleBlogApp {
             
             if (!initData) {
                 this.showToast('No Telegram authentication data found', 'error');
+                
+                // Show Telegram button for manual login  
+                const telegramBtn = document.getElementById('telegram-login-btn');
+                if (telegramBtn) telegramBtn.style.display = 'flex';
                 return;
             }
 
@@ -99,7 +110,7 @@ class TeleBlogApp {
                 body: JSON.stringify({ initData })
             });
 
-            if (result.success) {
+            if (result.user && result.token) {
                 this.currentUser = result.user;
                 this.jwtToken = result.token;
                 
@@ -113,10 +124,17 @@ class TeleBlogApp {
                 this.showToast('Login successful! 🎉', 'success');
             } else {
                 this.showToast('Authentication failed', 'error');
+                // Show Telegram button for retry
+                const telegramBtn = document.getElementById('telegram-login-btn');
+                if (telegramBtn) telegramBtn.style.display = 'flex';
             }
         } catch (error) {
             console.error('Telegram auth error:', error);
             this.showToast('Login failed. Please try development login.', 'error');
+            
+            // Show Telegram button for manual retry
+            const telegramBtn = document.getElementById('telegram-login-btn');
+            if (telegramBtn) telegramBtn.style.display = 'flex';
         } finally {
             this.hideLoading();
         }
@@ -230,6 +248,15 @@ class TeleBlogApp {
             });
         }
 
+        // Telegram login button
+        const telegramLoginBtn = document.getElementById('telegram-login-btn');
+        if (telegramLoginBtn) {
+            telegramLoginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleTelegramAuth();
+            });
+        }
+
         // Post form
         const postForm = document.getElementById('post-form');
         if (postForm) {
@@ -266,15 +293,6 @@ class TeleBlogApp {
             postsFilter.addEventListener('change', (e) => {
                 const searchQuery = document.getElementById('posts-search')?.value || '';
                 this.loadPosts(e.target.value, searchQuery);
-            });
-        }
-
-        // Telegram login button
-        const telegramLoginBtn = document.getElementById('telegram-login-btn');
-        if (telegramLoginBtn) {
-            telegramLoginBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleTelegramAuth();
             });
         }
     }
