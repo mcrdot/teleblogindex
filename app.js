@@ -17,30 +17,32 @@ class TeleBlogApp {
     }
 
 // IMP // Show Telegram button if in Telegram environment
- async init() {
+async init() {
     console.log('🚀 Initializing TeleBlog...');
+    console.log('Telegram available:', typeof window.Telegram !== 'undefined');
     
     // Initialize core systems
     this.initTheme();
     this.setupNavigation();
     this.setupEventListeners();
     
-    // Show Telegram button if in Telegram environment
-    if (window.Telegram?.WebApp) {
+    // Check Telegram environment
+    if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
         console.log('📱 Telegram WebApp detected');
-        const telegramBtn = document.getElementById('telegram-login-btn');
-        if (telegramBtn) telegramBtn.style.display = 'flex';
-        
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
         
-        // Try auto-auth after a short delay
+        // Show Telegram button
+        const telegramBtn = document.getElementById('telegram-login-btn');
+        if (telegramBtn) telegramBtn.style.display = 'flex';
+        
+        // Try auto-auth
         setTimeout(() => {
             this.handleTelegramAuth();
-        }, 500);
+        }, 1000);
     } else {
         console.log('🌐 Standard web browser detected');
-        // Hide Telegram button in web browser
+        // Hide Telegram button in regular browser
         const telegramBtn = document.getElementById('telegram-login-btn');
         if (telegramBtn) telegramBtn.style.display = 'none';
         
@@ -86,36 +88,35 @@ class TeleBlogApp {
     }
 
     // Telegram authentication
-    async handleTelegramAuth() {
-        console.log('🔐 Starting Telegram auth...');
-        console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
-        console.log('initData available:', !!window.Telegram?.WebApp?.initData);
-        console.log('initData content:', window.Telegram?.WebApp?.initData);
-        // if (!window.Telegram?.WebApp) {
-        //     this.showToast('Telegram WebApp not available', 'error');
-            
-        //     // Show Telegram button for manual login
-        //     const telegramBtn = document.getElementById('telegram-login-btn');
-        //     if (telegramBtn) telegramBtn.style.display = 'flex';
-        //     return;
-        // }
+   async handleTelegramAuth() {
+    console.log('🔐 Starting Telegram auth...');
+    
+    // Check if Telegram WebApp is available
+    if (typeof window.Telegram === 'undefined' || !window.Telegram.WebApp) {
+        this.showToast('Please open this app inside Telegram', 'error');
+        console.error('Telegram WebApp not found');
+        return;
+    }
 
-        this.showLoading();
+    this.showLoading();
 
     try {
         const initData = window.Telegram.WebApp.initData;
         
         if (!initData) {
-            this.showToast('No Telegram authentication data found. Please try again.', 'error');
+            this.showToast('Telegram authentication data not available. Please try again.', 'error');
+            console.error('No initData found');
             return;
         }
 
+        console.log('Sending auth request with initData...');
         const result = await this.apiCall('/auth', {
             method: 'POST',
             body: JSON.stringify({ initData })
         });
 
         if (result.user && result.token) {
+            // Success - user logged in
             this.currentUser = result.user;
             this.jwtToken = result.token;
             
