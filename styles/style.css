@@ -240,6 +240,44 @@ body {
   color: var(--text-secondary-color);
 }
 
+
+/* Telegram Login Button */
+.btn-telegram {
+    background: #3390ec;
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.btn-telegram:hover {
+    background: #2a7fd8;
+    transform: translateY(-1px);
+}
+
+/* Telegram icon */
+.icon-telegram::before {
+    content: "✈️";
+    font-size: 1.2rem;
+}
+
+/* Make sure the button is visible by default */
+#telegram-login-btn {
+    display: flex !important;
+}
+
+
+
 /* Main Content */
 .main-content {
   min-height: calc(100vh - var(--header-height) - var(--nav-height));

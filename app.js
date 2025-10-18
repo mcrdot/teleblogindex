@@ -16,40 +16,45 @@ class TeleBlogApp {
         this.init();
     }
 
-    async init() {
-        console.log('🚀 Initializing TeleBlog...');
+// IMP // Show Telegram button if in Telegram environment
+ async init() {
+    console.log('🚀 Initializing TeleBlog...');
+    
+    // Initialize core systems
+    this.initTheme();
+    this.setupNavigation();
+    this.setupEventListeners();
+    
+    // Show Telegram button if in Telegram environment
+    if (window.Telegram?.WebApp) {
+        console.log('📱 Telegram WebApp detected');
+        const telegramBtn = document.getElementById('telegram-login-btn');
+        if (telegramBtn) telegramBtn.style.display = 'flex';
         
-        // Initialize core systems
-        this.initTheme();
-        this.setupNavigation();
-        this.setupEventListeners();
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
         
-        // Show Telegram button if in Telegram environment
-        if (window.Telegram?.WebApp) {
-            console.log('📱 Telegram WebApp detected');
-            const telegramBtn = document.getElementById('telegram-login-btn');
-            if (telegramBtn) telegramBtn.style.display = 'flex';
-            
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-            
-            // Try Telegram authentication first
-            await this.handleTelegramAuth();
+        // Try auto-auth after a short delay
+        setTimeout(() => {
+            this.handleTelegramAuth();
+        }, 500);
+    } else {
+        console.log('🌐 Standard web browser detected');
+        // Hide Telegram button in web browser
+        const telegramBtn = document.getElementById('telegram-login-btn');
+        if (telegramBtn) telegramBtn.style.display = 'none';
+        
+        await this.checkAuth();
+        if (this.currentUser) {
+            await this.loadInitialData();
+            this.updateAuthUI(true);
         } else {
-            console.log('🌐 Standard web browser detected');
-            // Check existing authentication
-            await this.checkAuth();
-            
-            if (this.currentUser) {
-                await this.loadInitialData();
-                this.updateAuthUI(true);
-            } else {
-                this.showSection('auth');
-            }
+            this.showSection('auth');
         }
-        
-        this.hideLoading();
     }
+    
+    this.hideLoading();
+}
 
     // API call method
     async apiCall(endpoint, options = {}) {
