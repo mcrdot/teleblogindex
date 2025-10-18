@@ -87,63 +87,56 @@ class TeleBlogApp {
 
     // Telegram authentication
     async handleTelegramAuth() {
-        if (!window.Telegram?.WebApp) {
-            this.showToast('Telegram WebApp not available', 'error');
+        console.log('🔐 Starting Telegram auth...');
+        console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
+        console.log('initData available:', !!window.Telegram?.WebApp?.initData);
+        console.log('initData content:', window.Telegram?.WebApp?.initData);
+        // if (!window.Telegram?.WebApp) {
+        //     this.showToast('Telegram WebApp not available', 'error');
             
-            // Show Telegram button for manual login
-            const telegramBtn = document.getElementById('telegram-login-btn');
-            if (telegramBtn) telegramBtn.style.display = 'flex';
-            return;
-        }
+        //     // Show Telegram button for manual login
+        //     const telegramBtn = document.getElementById('telegram-login-btn');
+        //     if (telegramBtn) telegramBtn.style.display = 'flex';
+        //     return;
+        // }
 
         this.showLoading();
 
-        try {
-            const initData = window.Telegram.WebApp.initData;
-            
-            if (!initData) {
-                this.showToast('No Telegram authentication data found', 'error');
-                
-                // Show Telegram button for manual login  
-                const telegramBtn = document.getElementById('telegram-login-btn');
-                if (telegramBtn) telegramBtn.style.display = 'flex';
-                return;
-            }
-
-            const result = await this.apiCall('/auth', {
-                method: 'POST',
-                body: JSON.stringify({ initData })
-            });
-
-            if (result.user && result.token) {
-                this.currentUser = result.user;
-                this.jwtToken = result.token;
-                
-                localStorage.setItem('teleblog_token', this.jwtToken);
-                localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
-                
-                this.updateAuthUI(true);
-                this.updateUserUI();
-                await this.loadInitialData();
-                this.showSection('home');
-                this.showToast('Login successful! 🎉', 'success');
-            } else {
-                this.showToast('Authentication failed', 'error');
-                // Show Telegram button for retry
-                const telegramBtn = document.getElementById('telegram-login-btn');
-                if (telegramBtn) telegramBtn.style.display = 'flex';
-            }
-        } catch (error) {
-            console.error('Telegram auth error:', error);
-            this.showToast('Login failed. Please try development login.', 'error');
-            
-            // Show Telegram button for manual retry
-            const telegramBtn = document.getElementById('telegram-login-btn');
-            if (telegramBtn) telegramBtn.style.display = 'flex';
-        } finally {
-            this.hideLoading();
+    try {
+        const initData = window.Telegram.WebApp.initData;
+        
+        if (!initData) {
+            this.showToast('No Telegram authentication data found. Please try again.', 'error');
+            return;
         }
+
+        const result = await this.apiCall('/auth', {
+            method: 'POST',
+            body: JSON.stringify({ initData })
+        });
+
+        if (result.user && result.token) {
+            this.currentUser = result.user;
+            this.jwtToken = result.token;
+            
+            localStorage.setItem('teleblog_token', this.jwtToken);
+            localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
+            
+            this.updateAuthUI(true);
+            this.updateUserUI();
+            await this.loadInitialData();
+            this.showSection('home');
+            this.showToast('Login successful! 🎉', 'success');
+        } else {
+            this.showToast('Authentication failed: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Telegram auth error:', error);
+        this.showToast('Login failed: ' + error.message, 'error');
+    } finally {
+        this.hideLoading();
     }
+}
 
     // Theme Management
     initTheme() {
