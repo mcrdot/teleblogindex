@@ -6,8 +6,15 @@
     <title>TeleBlog - Decentralized Blogging</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
-        <!-- Telegram WebApp Script -->
+    
+    <!-- Telegram WebApp Script - LOAD FIRST -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Monetag Ad Script -->
+    <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
+    
+    <!-- Include Supabase client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body data-theme="default">
     <!-- Loading Overlay -->
@@ -125,13 +132,13 @@
             <div class="auth-container">
                 <div class="auth-card">
                     <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
-                    <!-- In the auth section, replace the current telegram button -->
+                    <!-- UPDATED AUTH SECTION -->
                     <div class="telegram-auth">
                         <h2>Join TeleBlog</h2>
                         <p class="auth-subtitle">Start your blogging journey</p>
                         
-                        <!-- Telegram Login Button - MAKE IT VISIBLE -->
-                        <button id="telegram-login-btn" class="btn-telegram">
+                        <!-- Telegram Login Button - ALWAYS VISIBLE IN TELEGRAM -->
+                        <button id="telegram-login-btn" class="btn-telegram" style="display: flex;">
                             <div class="icon-telegram"></div>
                             <span>Login with Telegram</span>
                         </button>
@@ -143,6 +150,7 @@
                         <div class="telegram-info">
                             <p>📱 <strong>Telegram Users:</strong> Click "Login with Telegram" above</p>
                             <p>🔄 <strong>Web Users:</strong> Use development login for testing</p>
+                            <p>🔧 <strong>Debug Info:</strong> Check browser console for details</p>
                         </div>
                     </div>
                 </div>
@@ -220,6 +228,50 @@
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Debug Panel - ADD THIS FOR TROUBLESHOOTING -->
+    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.9); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 10000; max-width: 300px; display: none;">
+        <strong>🔧 TeleBlog Debug</strong>
+        <div id="debug-content"></div>
+        <button onclick="document.getElementById('debug-panel').style.display='none'" style="background: #ff6b6b; color: white; border: none; padding: 2px 6px; border-radius: 3px; margin-top: 5px; font-size: 10px;">Close</button>
+    </div>
+
     <script src="app.js"></script>
+    
+    <!-- Debug Script - ADD THIS -->
+    <script>
+        // Debug helper to show Telegram WebApp status
+        function updateDebugInfo() {
+            const debugPanel = document.getElementById('debug-panel');
+            const debugContent = document.getElementById('debug-content');
+            
+            if (debugPanel && debugContent) {
+                const tg = window.Telegram?.WebApp;
+                debugContent.innerHTML = `
+                    <div>Telegram: ${!!tg ? '✅' : '❌'}</div>
+                    <div>Platform: ${tg?.platform || 'N/A'}</div>
+                    <div>Version: ${tg?.version || 'N/A'}</div>
+                    <div>InitData: ${tg?.initData ? '✅' : '❌'}</div>
+                    <div>User: ${window.teleBlogApp?.currentUser?.display_name || 'N/A'}</div>
+                    <div>Token: ${!!window.teleBlogApp?.jwtToken ? '✅' : '❌'}</div>
+                `;
+                debugPanel.style.display = 'block';
+            }
+        }
+        
+        // Update debug info every 3 seconds
+        setInterval(updateDebugInfo, 3000);
+        
+        // Show debug panel on double tap
+        let tapCount = 0;
+        document.addEventListener('click', () => {
+            tapCount++;
+            setTimeout(() => {
+                if (tapCount === 3) {
+                    updateDebugInfo();
+                }
+                tapCount = 0;
+            }, 300);
+        });
+    </script>
 </body>
 </html>
