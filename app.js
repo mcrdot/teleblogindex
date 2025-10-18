@@ -1,4 +1,4 @@
-// TeleBlog - Fully Updated with API Integration
+// TeleBlog - Fully Updated with Telegram Fix
 class TeleBlogApp {
     constructor() {
         this.currentSection = 'home';
@@ -16,47 +16,101 @@ class TeleBlogApp {
         this.init();
     }
 
-// IMP // Show Telegram button if in Telegram environment
-async init() {
-    console.log('🚀 Initializing TeleBlog...');
-    console.log('Telegram available:', typeof window.Telegram !== 'undefined');
-    
-    // Initialize core systems
-    this.initTheme();
-    this.setupNavigation();
-    this.setupEventListeners();
-    
-    // Check Telegram environment
-    if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
-        console.log('📱 Telegram WebApp detected');
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+    async init() {
+        console.log('🚀 Initializing TeleBlog...');
         
-        // Show Telegram button
-        const telegramBtn = document.getElementById('telegram-login-btn');
-        if (telegramBtn) telegramBtn.style.display = 'flex';
+        // Initialize core systems
+        this.initTheme();
+        this.setupNavigation();
+        this.setupEventListeners();
         
-        // Try auto-auth
-        setTimeout(() => {
-            this.handleTelegramAuth();
-        }, 1000);
-    } else {
-        console.log('🌐 Standard web browser detected');
-        // Hide Telegram button in regular browser
-        const telegramBtn = document.getElementById('telegram-login-btn');
-        if (telegramBtn) telegramBtn.style.display = 'none';
+        // Telegram detection with multiple fallbacks
+        const isTelegram = this.detectTelegramEnvironment();
         
-        await this.checkAuth();
-        if (this.currentUser) {
-            await this.loadInitialData();
-            this.updateAuthUI(true);
+        if (isTelegram) {
+            console.log('📱 Telegram environment detected');
+            this.handleTelegramInit();
         } else {
-            this.showSection('auth');
+            console.log('🌐 Standard web browser detected');
+            this.handleWebInit();
+        }
+        
+        this.hideLoading();
+    }
+
+    detectTelegramEnvironment() {
+        // Method 1: Check window.Telegram.WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            console.log('Detected: window.Telegram.WebApp');
+            return true;
+        }
+        
+        // Method 2: Check URL parameters (common in Telegram Mini Apps)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tgWebAppStartParam') || urlParams.get('tgWebAppPlatform')) {
+            console.log('Detected: Telegram URL parameters');
+            return true;
+        }
+        
+        // Method 3: Check hash parameters
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.get('tgWebAppData')) {
+            console.log('Detected: Telegram hash parameters');
+            return true;
+        }
+        
+        // Method 4: Check user agent
+        if (navigator.userAgent.includes('Telegram')) {
+            console.log('Detected: Telegram user agent');
+            return true;
+        }
+        
+        return false;
+    }
+
+    handleTelegramInit() {
+        // Always show Telegram button in Telegram environment
+        const telegramBtn = document.getElementById('telegram-login-btn');
+        if (telegramBtn) {
+            telegramBtn.style.display = 'flex';
+        }
+
+        // Initialize Telegram WebApp if available
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+                console.log('Telegram WebApp initialized');
+                
+                // Try auto-auth after delay
+                setTimeout(() => {
+                    this.handleTelegramAuth();
+                }, 1500);
+            } catch (error) {
+                console.error('Error initializing Telegram WebApp:', error);
+            }
+        } else {
+            console.log('Telegram WebApp object not available, showing manual login');
         }
     }
-    
-    this.hideLoading();
-}
+
+    handleWebInit() {
+        // Hide Telegram button in regular browser
+        const telegramBtn = document.getElementById('telegram-login-btn');
+        if (telegramBtn) {
+            telegramBtn.style.display = 'none';
+        }
+        
+        // Check existing authentication
+        this.checkAuth().then(() => {
+            if (this.currentUser) {
+                this.loadInitialData();
+                this.updateAuthUI(true);
+            } else {
+                this.showSection('auth');
+            }
+        });
+    }
 
     // API call method
     async apiCall(endpoint, options = {}) {
@@ -87,57 +141,63 @@ async init() {
         }
     }
 
-    // Telegram authentication
-   async handleTelegramAuth() {
-    console.log('🔐 Starting Telegram auth...');
-    
-    // Check if Telegram WebApp is available
-    if (typeof window.Telegram === 'undefined' || !window.Telegram.WebApp) {
-        this.showToast('Please open this app inside Telegram', 'error');
-        console.error('Telegram WebApp not found');
-        return;
-    }
-
-    this.showLoading();
-
-    try {
-        const initData = window.Telegram.WebApp.initData;
+    // Telegram authentication - SIMPLIFIED
+    async handleTelegramAuth() {
+        console.log('🔐 Starting Telegram authentication...');
         
+        let initData = '';
+        
+        // Get initData from Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            initData = window.Telegram.WebApp.initData;
+            console.log('InitData from WebApp:', initData ? 'Available' : 'Not available');
+        }
+        
+        // If no initData, try to get from URL
         if (!initData) {
-            this.showToast('Telegram authentication data not available. Please try again.', 'error');
-            console.error('No initData found');
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            initData = hashParams.get('tgWebAppData') || '';
+            console.log('InitData from URL:', initData ? 'Available' : 'Not available');
+        }
+
+        if (!initData) {
+            console.log('No authentication data available');
+            this.showToast('Telegram authentication not ready. Please try again.', 'info');
             return;
         }
 
-        console.log('Sending auth request with initData...');
-        const result = await this.apiCall('/auth', {
-            method: 'POST',
-            body: JSON.stringify({ initData })
-        });
+        this.showLoading();
 
-        if (result.user && result.token) {
-            // Success - user logged in
-            this.currentUser = result.user;
-            this.jwtToken = result.token;
-            
-            localStorage.setItem('teleblog_token', this.jwtToken);
-            localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
-            
-            this.updateAuthUI(true);
-            this.updateUserUI();
-            await this.loadInitialData();
-            this.showSection('home');
-            this.showToast('Login successful! 🎉', 'success');
-        } else {
-            this.showToast('Authentication failed: ' + (result.error || 'Unknown error'), 'error');
+        try {
+            console.log('Sending auth request...');
+            const result = await this.apiCall('/auth', {
+                method: 'POST',
+                body: JSON.stringify({ initData })
+            });
+
+            if (result.user && result.token) {
+                // Success - user logged in
+                this.currentUser = result.user;
+                this.jwtToken = result.token;
+                
+                localStorage.setItem('teleblog_token', this.jwtToken);
+                localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
+                
+                this.updateAuthUI(true);
+                this.updateUserUI();
+                await this.loadInitialData();
+                this.showSection('home');
+                this.showToast('Welcome to TeleBlog! 🎉', 'success');
+            } else {
+                this.showToast('Authentication failed. Please try development login.', 'error');
+            }
+        } catch (error) {
+            console.error('Telegram auth error:', error);
+            this.showToast('Login failed: ' + error.message, 'error');
+        } finally {
+            this.hideLoading();
         }
-    } catch (error) {
-        console.error('Telegram auth error:', error);
-        this.showToast('Login failed: ' + error.message, 'error');
-    } finally {
-        this.hideLoading();
     }
-}
 
     // Theme Management
     initTheme() {
@@ -163,7 +223,6 @@ async init() {
     }
 
     updateThemeSelection() {
-        // Update theme option highlights
         const themeOptions = document.querySelectorAll('.theme-option');
         if (themeOptions) {
             themeOptions.forEach(option => {
@@ -358,7 +417,6 @@ async init() {
 
     // Authentication
     async checkAuth() {
-        // Check if we have a valid token
         if (this.jwtToken) {
             try {
                 const payload = JSON.parse(atob(this.jwtToken.split('.')[1]));
@@ -371,7 +429,7 @@ async init() {
                 this.clearAuthData();
             }
         }
-        return this.currentUser !== null;
+        return false;
     }
 
     async loadInitialData() {
@@ -395,7 +453,6 @@ async init() {
             
         } catch (error) {
             console.error('Error loading posts from API:', error);
-            // Fallback to mock data if API fails
             await this.loadMockPosts();
         } finally {
             this.hideLoading();
@@ -501,16 +558,6 @@ async init() {
             return;
         }
 
-        if (title.length < 5) {
-            this.showToast('Title should be at least 5 characters long!', 'error');
-            return;
-        }
-
-        if (content.length < 10) {
-            this.showToast('Content should be at least 10 characters long!', 'error');
-            return;
-        }
-
         this.showLoading();
 
         try {
@@ -524,40 +571,14 @@ async init() {
             });
 
             this.showToast('Post published successfully! 🎉', 'success');
-
-            // Reset form
             titleInput.value = '';
             contentInput.value = '';
-            
-            // Reload posts
             await this.loadPosts();
-            
             window.location.hash = 'posts';
             
         } catch (error) {
             console.error('Error creating post:', error);
-            
-            // Fallback to local storage if API fails
-            const newPost = {
-                id: Date.now().toString(),
-                title,
-                content,
-                excerpt: content.substring(0, 150) + (content.length > 150 ? '...' : ''),
-                author: this.currentUser.display_name,
-                author_id: this.currentUser.id,
-                date: new Date().toISOString(),
-                tags: [],
-                view_count: 0,
-                like_count: 0,
-                is_premium: false,
-                read_time: '1 min read'
-            };
-
-            this.posts.unshift(newPost);
-            this.showToast('Post saved locally (API unavailable)', 'info');
-            this.renderPosts(this.posts);
-            this.updateStats();
-            window.location.hash = 'posts';
+            this.showToast('Failed to create post. Please try again.', 'error');
         } finally {
             this.hideLoading();
         }
@@ -584,7 +605,6 @@ async init() {
             const length = contentInput.value.length;
             charCounter.textContent = `${length} characters`;
             
-            // Add warning for very long posts
             if (length > 1000) {
                 charCounter.style.color = '#ff6b6b';
             } else {
@@ -607,7 +627,6 @@ async init() {
 
         toastContainer.appendChild(toast);
 
-        // Add event listener to close button
         const closeBtn = toast.querySelector('.toast-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
@@ -615,7 +634,6 @@ async init() {
             });
         }
 
-        // Auto remove after 5 seconds
         setTimeout(() => {
             if (toast.parentElement) {
                 toast.remove();
@@ -716,7 +734,6 @@ async init() {
             profileName.textContent = this.currentUser.display_name;
         }
 
-        // Update user avatar if available
         const profileAvatar = document.getElementById('profile-avatar');
         if (profileAvatar && this.currentUser?.avatar_url) {
             profileAvatar.src = this.currentUser.avatar_url;
@@ -748,7 +765,6 @@ async init() {
             
         } catch (error) {
             console.error('Error loading user stats:', error);
-            // Fallback to local data
             const totalPosts = document.getElementById('total-posts');
             if (totalPosts) totalPosts.textContent = this.posts.length;
         }
