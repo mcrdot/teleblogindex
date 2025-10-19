@@ -1,17 +1,13 @@
-// TeleBlog - Fixed Telegram Mini App Authentication
+// TeleBlog - Fixed Telegram Auto-Auth
 class TeleBlogApp {
     constructor() {
         this.currentSection = 'home';
         this.currentUser = null;
         this.posts = [];
-        this.drafts = [];
-        this.bookmarks = [];
         this.jwtToken = localStorage.getItem('teleblog_token');
         this.currentTheme = localStorage.getItem('teleblog_theme') || 'default';
         this.isLoading = false;
-        this.telegramInitAttempted = false;
         
-        // API configuration
         this.API_BASE_URL = 'https://teleblog-indexjs.macrotiser-pk.workers.dev';
         
         this.init();
@@ -20,202 +16,158 @@ class TeleBlogApp {
     async init() {
         console.log('🚀 Initializing TeleBlog...');
         
-        // Initialize core systems first
         this.initTheme();
         this.setupNavigation();
         this.setupEventListeners();
         
-        // Show loading initially
-        this.showLoading();
-        
-        // Check Telegram environment with proper timing
-        setTimeout(() => {
-            this.initializeApp();
-        }, 100);
-    }
-
-    async initializeApp() {
-        const isTelegram = this.detectTelegramEnvironment();
-        
-        if (isTelegram) {
-            console.log('📱 Telegram environment detected - initializing WebApp');
-            await this.initializeTelegramWebApp();
+        // Check if we're in Telegram Mini App
+        if (this.isInTelegramWebApp()) {
+            console.log('📱 Telegram Mini App detected');
+            await this.initTelegramApp();
         } else {
-            console.log('🌐 Standard web browser detected');
-            this.handleWebInit();
+            console.log('🌐 Web browser detected');
+            await this.initWebApp();
         }
         
         this.hideLoading();
     }
 
-    detectTelegramEnvironment() {
-        // Primary detection: Check if Telegram WebApp is available
-        if (window.Telegram && window.Telegram.WebApp) {
-            console.log('✅ Telegram WebApp detected');
-            return true;
-        }
-        
-        // Secondary detection: Check URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tgWebAppStartParam') || urlParams.get('tgWebAppPlatform')) {
-            console.log('✅ Telegram URL parameters detected');
-            return true;
-        }
-        
-        // Tertiary detection: Check user agent
-        if (navigator.userAgent.includes('Telegram')) {
-            console.log('✅ Telegram user agent detected');
-            return true;
-        }
-        
-        console.log('❌ No Telegram environment detected');
-        return false;
+    isInTelegramWebApp() {
+        // Multiple detection methods
+        return (
+            (window.Telegram && window.Telegram.WebApp) ||
+            window.location.hash.includes('tgWebAppData') ||
+            navigator.userAgent.includes('Telegram')
+        );
     }
 
-    async initializeTelegramWebApp() {
-        if (this.telegramInitAttempted) {
-            console.log('⚠️ Telegram initialization already attempted');
-            return;
-        }
-        
-        this.telegramInitAttempted = true;
-        
+    async initTelegramApp() {
         try {
-            // Ensure Telegram WebApp is available
-            if (!window.Telegram?.WebApp) {
-                console.error('❌ Telegram.WebApp not available after detection');
-                this.handleWebInit();
-                return;
+            // Initialize Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+                
+                // Set app theme to match Telegram
+                this.applyTelegramTheme();
+                
+                console.log('Telegram WebApp initialized');
+                console.log('Platform:', Telegram.WebApp.platform);
+                console.log('InitData available:', !!Telegram.WebApp.initData);
             }
-
-            console.log('🔄 Starting Telegram WebApp initialization...');
             
-            // CRITICAL: Initialize Telegram WebApp in correct order
-            window.Telegram.WebApp.expand(); // Expand first
-            window.Telegram.WebApp.ready(); // Then mark as ready
+            // Hide Telegram button in Telegram environment
+            const telegramBtn = document.getElementById('telegram-login-btn');
+            if (telegramBtn) telegramBtn.style.display = 'none';
             
-            console.log('✅ Telegram WebApp initialized:', {
-                platform: window.Telegram.WebApp.platform,
-                version: window.Telegram.WebApp.version,
-                initData: window.Telegram.WebApp.initData ? 'Available' : 'Not available',
-                initDataUnsafe: window.Telegram.WebApp.initDataUnsafe
-            });
-
-            // Wait a bit for initData to populate
-            setTimeout(async () => {
-                await this.handleTelegramAuth();
-            }, 1000);
-
+            // Try automatic authentication
+            await this.attemptTelegramAuth();
+            
         } catch (error) {
-            console.error('❌ Telegram WebApp initialization failed:', error);
-            this.handleWebInit();
+            console.error('Telegram init error:', error);
+            this.showToast('Telegram app initialization failed', 'error');
         }
     }
 
-    handleWebInit() {
-        // Hide Telegram button in regular browser
+    async initWebApp() {
+        // Hide Telegram button in web
         const telegramBtn = document.getElementById('telegram-login-btn');
-        if (telegramBtn) {
-            telegramBtn.style.display = 'none';
-        }
+        if (telegramBtn) telegramBtn.style.display = 'none';
         
-        // Check existing authentication
-        this.checkAuth().then(() => {
-            if (this.currentUser) {
-                this.loadInitialData();
-                this.updateAuthUI(true);
-                this.showSection('home');
-            } else {
-                this.showSection('auth');
-            }
-        });
+        // Check existing auth
+        if (await this.checkAuth()) {
+            await this.loadInitialData();
+            this.updateAuthUI(true);
+        } else {
+            this.showSection('auth');
+        }
     }
 
-    // FIXED: Telegram authentication with proper initData handling
-    async handleTelegramAuth() {
-        console.log('🔐 Starting Telegram authentication...');
+    async attemptTelegramAuth() {
+        console.log('🔄 Attempting Telegram auto-auth...');
         
         let initData = '';
         
-        // Method 1: Get from Telegram WebApp
-        if (window.Telegram?.WebApp) {
-            initData = window.Telegram.WebApp.initData;
-            console.log('📱 InitData from WebApp:', initData ? `Available (${initData.length} chars)` : 'Not available');
+        // Get initData from Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            initData = Telegram.WebApp.initData;
+            console.log('InitData from WebApp:', initData ? 'Available' : 'Not available');
         }
         
-        // Method 2: Try to get from URL as fallback
+        // If still no initData, try from URL
         if (!initData) {
-            const urlParams = new URLSearchParams(window.location.search);
-            initData = urlParams.get('tgWebAppData') || '';
-            console.log('🔗 InitData from URL:', initData ? 'Available' : 'Not available');
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            initData = hashParams.get('tgWebAppData') || '';
+            console.log('InitData from URL:', initData ? 'Available' : 'Not available');
         }
 
         if (!initData) {
-            console.log('❌ No authentication data available - showing manual login');
-            this.showToast('Telegram authentication data not available. Please click "Login with Telegram" to retry.', 'info');
-            
-            // Make sure Telegram button is visible for manual retry
-            const telegramBtn = document.getElementById('telegram-login-btn');
-            if (telegramBtn) {
-                telegramBtn.style.display = 'flex';
-                telegramBtn.onclick = () => this.retryTelegramAuth();
-            }
+            console.log('❌ No initData available for auto-auth');
+            this.showSection('auth');
             return;
         }
 
-        this.showLoading('Authenticating with Telegram...');
+        this.showLoading();
 
         try {
-            console.log('🔄 Sending auth request to API...');
+            console.log('📡 Sending Telegram auth request...');
             const result = await this.apiCall('/auth', {
                 method: 'POST',
                 body: JSON.stringify({ initData })
             });
 
-            console.log('✅ Auth response:', result);
-
             if (result.user && result.token) {
-                // Success - user logged in
-                this.currentUser = result.user;
-                this.jwtToken = result.token;
-                
-                localStorage.setItem('teleblog_token', this.jwtToken);
-                localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
-                
-                this.updateAuthUI(true);
-                this.updateUserUI();
-                await this.loadInitialData();
-                this.showSection('home');
-                this.showToast('Welcome to TeleBlog! 🎉', 'success');
+                console.log('✅ Telegram auth successful');
+                await this.handleSuccessfulAuth(result.user, result.token);
             } else {
-                throw new Error('Invalid response from server');
+                console.log('❌ Auth failed:', result.error);
+                this.showToast('Authentication failed', 'error');
+                this.showSection('auth');
             }
         } catch (error) {
-            console.error('❌ Telegram auth error:', error);
-            this.showToast(`Login failed: ${error.message}`, 'error');
-            
-            // Show Telegram button for retry
-            const telegramBtn = document.getElementById('telegram-login-btn');
-            if (telegramBtn) {
-                telegramBtn.style.display = 'flex';
-                telegramBtn.onclick = () => this.retryTelegramAuth();
-            }
+            console.error('🔴 Auth request failed:', error);
+            this.showToast('Connection failed. Please try again.', 'error');
+            this.showSection('auth');
         } finally {
             this.hideLoading();
         }
     }
 
-    // Retry Telegram auth manually
-    async retryTelegramAuth() {
-        console.log('🔄 Manual Telegram auth retry...');
+    async handleSuccessfulAuth(user, token) {
+        this.currentUser = user;
+        this.jwtToken = token;
         
-        // Re-initialize Telegram WebApp
-        if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.ready();
-        }
+        // Store auth data
+        localStorage.setItem('teleblog_token', this.jwtToken);
+        localStorage.setItem('teleblog_user', JSON.stringify(this.currentUser));
         
-        await this.handleTelegramAuth();
+        // Update UI
+        this.updateAuthUI(true);
+        this.updateUserUI();
+        
+        // Load user data
+        await this.loadInitialData();
+        
+        // Show home section
+        this.showSection('home');
+        this.showToast(`Welcome ${user.display_name}! 🎉`, 'success');
+        
+        console.log('👤 User logged in:', user);
     }
+
+    applyTelegramTheme() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const theme = Telegram.WebApp.colorScheme;
+            if (theme === 'dark') {
+                this.setTheme('telegram-dark');
+            } else {
+                this.setTheme('telegram-light');
+            }
+        }
+    }
+
+    // ... (Keep all your other methods exactly as they were in your previous version)
+    // Only the authentication-related methods above were changed
 
     // API call method
     async apiCall(endpoint, options = {}) {
@@ -228,24 +180,19 @@ class TeleBlogApp {
                 ...options
             };
 
-            // Add authorization header if user is logged in
             if (this.jwtToken && !endpoint.includes('/auth')) {
                 config.headers.Authorization = `Bearer ${this.jwtToken}`;
             }
 
-            console.log(`🌐 API Call: ${endpoint}`, config);
-            
             const response = await fetch(`${this.API_BASE_URL}${endpoint}`, config);
             
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`❌ API error ${response.status}:`, errorText);
-                throw new Error(`API error: ${response.status} - ${errorText}`);
+                throw new Error(`API error: ${response.status}`);
             }
             
             return await response.json();
         } catch (error) {
-            console.error('❌ API call failed:', error);
+            console.error('API call failed:', error);
             throw error;
         }
     }
@@ -357,12 +304,12 @@ class TeleBlogApp {
             });
         }
 
-        // Telegram login button - UPDATED
+        // Telegram login button
         const telegramLoginBtn = document.getElementById('telegram-login-btn');
         if (telegramLoginBtn) {
             telegramLoginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.retryTelegramAuth();
+                this.handleTelegramAuth();
             });
         }
 
@@ -867,8 +814,3 @@ class TeleBlogApp {
 document.addEventListener('DOMContentLoaded', () => {
     window.teleBlogApp = new TeleBlogApp();
 });
-
-// Debug helper - Add this to help with troubleshooting
-console.log('🔧 TeleBlog Debug Mode Active');
-console.log('📱 Telegram WebApp available:', !!window.Telegram?.WebApp);
-console.log('🌐 Current URL:', window.location.href);
