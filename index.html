@@ -1,277 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleBlog - Decentralized Blogging</title>
-    <link rel="stylesheet" href="styles/style.css">
-    <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
-    
-    <!-- Telegram WebApp Script - LOAD FIRST -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Monetag Ad Script -->
-    <script src='//libtl.com/sdk.js' data-zone='9803188' data-sdk='show_9803188'></script>
-    
-    <!-- Include Supabase client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeleBlog</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body data-theme="default">
+<body>
+  <div id="app">
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Loading TeleBlog...</p>
+    <div id="loading-overlay">
+      <div class="loader"></div>
     </div>
 
-    <!-- Sticky Header -->
-    <header class="sticky-header">
-        <div class="header-content">
-            <img src="assets/images/tb-logo.png" alt="TeleBlog" class="header-logo">
-            <button id="settings-btn" class="settings-btn">
-                <div class="icon-settings"></div>
-            </button>
-        </div>
-    </header>
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="bottom-nav-content">
-            <div class="guest-only">
-                <a href="#home" class="nav-item" data-section="home">
-                    <div class="icon-house nav-icon"></div>
-                    <span class="nav-text">Home</span>
-                </a>
-                <a href="#auth" class="nav-item" data-section="auth">
-                    <div class="icon-key-round nav-icon"></div>
-                    <span class="nav-text">Login</span>
-                </a>
-            </div>
-            <div class="auth-only" style="display: none;">
-                <a href="#home" class="nav-item" data-section="home">
-                    <div class="icon-house nav-icon"></div>
-                    <span class="nav-text">Home</span>
-                </a>
-                <a href="#posts" class="nav-item" data-section="posts">
-                    <div class="icon-newspaper nav-icon"></div>
-                    <span class="nav-text">Posts</span>
-                </a>
-                <a href="#create" class="nav-item" data-section="create">
-                    <div class="icon-pencil-line nav-icon"></div>
-                    <span class="nav-text">Write</span>
-                </a>
-                <a href="#profile" class="nav-item" data-section="profile">
-                    <div class="icon-user nav-icon"></div>
-                    <span class="nav-text">Profile</span>
-                </a>
-            </div>
-        </div>
+    <!-- Auth Section -->
+    <section id="auth" class="page active guest-only">
+      <div class="auth-section">
+        <h2>Welcome to <span style="color:var(--accent-color)">TeleBlog</span></h2>
+        <p>The easiest way to publish and read articles inside Telegram.</p>
+        <button id="telegram-login-btn" class="btn" style="display:none;">Login with Telegram</button>
+        <button id="dev-login-btn" class="btn-outline" style="margin-top:12px;">Development Test Login</button>
+      </div>
+    </section>
+
+    <!-- Home Section -->
+    <section id="home" class="page auth-only">
+      <h2 style="margin-bottom:12px;">Latest Posts</h2>
+      <div id="posts-container"></div>
+    </section>
+
+    <!-- Profile Section -->
+    <section id="profile" class="page auth-only">
+      <div class="profile-section">
+        <img id="profile-avatar" src="https://cdn-icons-png.flaticon.com/512/3177/3177440.png" alt="User" />
+        <h3 id="profile-name">User</h3>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <nav class="auth-only">
+      <button id="nav-home" class="active" onclick="switchPage('home')">🏠</button>
+      <button id="nav-profile" onclick="switchPage('profile')">👤</button>
     </nav>
+  </div>
 
-    <!-- Settings Overlay -->
-    <div id="settings-overlay" class="settings-overlay">
-        <div class="settings-header">
-            <button id="settings-back-btn" class="settings-back-btn">
-                <div class="icon-arrow-left"></div>
-                Back
-            </button>
-            <h2 class="settings-title">Settings</h2>
-            <div style="width: 44px;"></div>
-        </div>
-        
-        <div class="settings-content">
-            <h3>Choose Theme</h3>
-            
-            <div class="theme-option" data-theme="default">
-                <div class="theme-checkbox"></div>
-                <div class="theme-info">
-                    <div class="theme-name">TeleBlog Theme</div>
-                    <div class="theme-description">Default dark theme</div>
-                </div>
-            </div>
-            
-            <div class="theme-option" data-theme="telegram-light">
-                <div class="theme-checkbox"></div>
-                <div class="theme-info">
-                    <div class="theme-name">Telegram Light</div>
-                    <div class="theme-description">Native light theme</div>
-                </div>
-            </div>
-            
-            <div class="theme-option" data-theme="telegram-dark">
-                <div class="theme-checkbox"></div>
-                <div class="theme-info">
-                    <div class="theme-name">Telegram Dark</div>
-                    <div class="theme-description">Native dark theme</div>
-                </div>
-            </div>
-        </div>
-    </div>
+  <script>
+    // Simple page switcher
+    function switchPage(id) {
+      document.querySelectorAll(".page.auth-only").forEach(p => p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+      document.getElementById("nav-" + id).classList.add("active");
+    }
+  </script>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <section id="home" class="content-section active">
-            <div class="container">
-                <div class="hero-section">
-                    <h1 class="hero-title">Welcome to TeleBlog</h1>
-                    <p class="hero-subtitle">Your decentralized blogging platform</p>
-                    <div class="hero-stats">
-                        <div class="stat-card">
-                            <span class="stat-number" id="total-posts">0</span>
-                            <span class="stat-label">Total Posts</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-number" id="active-users">0</span>
-                            <span class="stat-label">Active Writers</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="auth" class="content-section">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <img src="assets/images/tb-logo.png" alt="TeleBlog" class="auth-logo">
-                    <!-- UPDATED AUTH SECTION -->
-                    <div class="telegram-auth">
-                        <h2>Join TeleBlog</h2>
-                        <p class="auth-subtitle">Start your blogging journey</p>
-                        
-                        <!-- Telegram Login Button - ALWAYS VISIBLE IN TELEGRAM -->
-                        <button id="telegram-login-btn" class="btn-telegram" style="display: flex;">
-                            <div class="icon-telegram"></div>
-                            <span>Login with Telegram</span>
-                        </button>
-                        
-                        <button id="dev-login-btn" class="btn-primary">
-                            Development Test Login
-                        </button>
-                        
-                        <div class="telegram-info">
-                            <p>📱 <strong>Telegram Users:</strong> Click "Login with Telegram" above</p>
-                            <p>🔄 <strong>Web Users:</strong> Use development login for testing</p>
-                            <p>🔧 <strong>Debug Info:</strong> Check browser console for details</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="posts" class="content-section">
-            <div class="container">
-                <div class="posts-header">
-                    <h2>Latest Posts</h2>
-                    <div class="posts-controls">
-                        <select id="posts-filter" class="posts-filter">
-                            <option value="latest">Latest</option>
-                            <option value="popular">Popular</option>
-                            <option value="following">Following</option>
-                        </select>
-                        <input type="text" id="posts-search" placeholder="Search posts..." class="posts-search">
-                    </div>
-                </div>
-                <div id="posts-container" class="posts-grid">
-                    <!-- Posts will be loaded here -->
-                </div>
-            </div>
-        </section>
-
-        <section id="create" class="content-section">
-            <div class="container">
-                <h2>Create New Post</h2>
-                <form id="post-form" class="post-form">
-                    <div class="form-group">
-                        <input type="text" id="post-title" placeholder="Post title..." required maxlength="100">
-                        <div class="char-counter" id="title-counter">0/100</div>
-                    </div>
-                    <div class="form-group">
-                        <textarea id="post-content" placeholder="Write your post..." rows="8" required maxlength="5000"></textarea>
-                        <div class="char-counter" id="char-counter">0/5000 characters</div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">Publish Post</button>
-                        <button type="button" id="save-draft" class="btn-outline">Save Draft</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <section id="profile" class="content-section">
-            <div class="container">
-                <div class="profile-header">
-                    <div class="profile-avatar">
-                        <img id="profile-avatar" src="assets/images/default-avatar.png" alt="Profile Avatar">
-                    </div>
-                    <h2 id="profile-name">Profile</h2>
-                </div>
-                
-                <div class="profile-stats">
-                    <div class="stat-card">
-                        <span class="stat-number" id="profile-total-posts">0</span>
-                        <span class="stat-label">My Posts</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number" id="profile-total-likes">0</span>
-                        <span class="stat-label">Total Likes</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number" id="profile-total-views">0</span>
-                        <span class="stat-label">Total Views</span>
-                    </div>
-                </div>
-                
-                <button id="logout-btn" class="btn-outline logout-btn">Logout</button>
-            </div>
-        </section>
-    </main>
-
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
-
-    <!-- Debug Panel - ADD THIS FOR TROUBLESHOOTING -->
-    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.9); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 10000; max-width: 300px; display: none;">
-        <strong>🔧 TeleBlog Debug</strong>
-        <div id="debug-content"></div>
-        <button onclick="document.getElementById('debug-panel').style.display='none'" style="background: #ff6b6b; color: white; border: none; padding: 2px 6px; border-radius: 3px; margin-top: 5px; font-size: 10px;">Close</button>
-    </div>
-
-    <script src="app.js"></script>
-    
-    <!-- Debug Script - ADD THIS -->
-    <script>
-        // Debug helper to show Telegram WebApp status
-        function updateDebugInfo() {
-            const debugPanel = document.getElementById('debug-panel');
-            const debugContent = document.getElementById('debug-content');
-            
-            if (debugPanel && debugContent) {
-                const tg = window.Telegram?.WebApp;
-                debugContent.innerHTML = `
-                    <div>Telegram: ${!!tg ? '✅' : '❌'}</div>
-                    <div>Platform: ${tg?.platform || 'N/A'}</div>
-                    <div>Version: ${tg?.version || 'N/A'}</div>
-                    <div>InitData: ${tg?.initData ? '✅' : '❌'}</div>
-                    <div>User: ${window.teleBlogApp?.currentUser?.display_name || 'N/A'}</div>
-                    <div>Token: ${!!window.teleBlogApp?.jwtToken ? '✅' : '❌'}</div>
-                `;
-                debugPanel.style.display = 'block';
-            }
-        }
-        
-        // Update debug info every 3 seconds
-        setInterval(updateDebugInfo, 3000);
-        
-        // Show debug panel on double tap
-        let tapCount = 0;
-        document.addEventListener('click', () => {
-            tapCount++;
-            setTimeout(() => {
-                if (tapCount === 3) {
-                    updateDebugInfo();
-                }
-                tapCount = 0;
-            }, 300);
-        });
-    </script>
+  <script src="app.js"></script>
 </body>
 </html>
