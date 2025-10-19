@@ -1,5 +1,16 @@
 // app.js - TeleBlog Production Version - SIMPLIFIED & FIXED
 
+// Emergency loader timeout
+setTimeout(() => {
+  const loading = document.getElementById("loading-overlay");
+  if (loading && loading.classList.contains('active')) {
+    console.log('🆘 Emergency loader timeout - forcing removal');
+    loading.classList.remove('active');
+    document.getElementById("telegram-login-btn").style.display = "flex";
+    showToast("Loading timeout. Please try manual login.", "error");
+  }
+}, 10000);
+
 const API_BASE = "https://teleblog-indexjs.macrotiser-pk.workers.dev";
 const SUPABASE_URL = "https://hudrcdftoqcwxskhuahg.supabase.co";
 
