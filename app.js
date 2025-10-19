@@ -1,4 +1,4 @@
-// app.js - TeleBlog Production Version - FIXED
+// app.js - TeleBlog Production Version - SIMPLIFIED & FIXED
 
 const API_BASE = "https://teleblog-indexjs.macrotiser-pk.workers.dev";
 const SUPABASE_URL = "https://hudrcdftoqcwxskhuahg.supabase.co";
@@ -6,33 +6,25 @@ const SUPABASE_URL = "https://hudrcdftoqcwxskhuahg.supabase.co";
 window.teleBlogApp = {
   currentUser: null,
   jwtToken: null,
-  supabase: null,
-  isTelegramWebApp: false
+  supabase: null
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const tg = window.Telegram?.WebApp;
+  const loading = document.getElementById("loading-overlay");
   const loginBtn = document.getElementById("telegram-login-btn");
   const devLoginBtn = document.getElementById("dev-login-btn");
-  const loading = document.getElementById("loading-overlay");
 
+  console.log('🚀 App starting...');
+
+  // Initialize Supabase
   window.teleBlogApp.supabase = window.supabase.createClient(SUPABASE_URL, "");
-  
-  // Check if we're in Telegram WebApp
-  window.teleBlogApp.isTelegramWebApp = !!(tg && tg.initDataUnsafe);
 
-  console.log('Telegram WebApp detected:', window.teleBlogApp.isTelegramWebApp);
-  if (window.teleBlogApp.isTelegramWebApp) {
-    console.log('WebApp version:', tg.version);
-    console.log('Platform:', tg.platform);
-    tg.ready();
-    tg.expand();
-  }
-
+  // Check for existing session
   const savedToken = localStorage.getItem("teleblog_token");
   const savedUser = localStorage.getItem("teleblog_user");
 
   if (savedToken && savedUser) {
+    console.log('📱 Found existing session');
     window.teleBlogApp.jwtToken = savedToken;
     window.teleBlogApp.currentUser = JSON.parse(savedUser);
     showAuthenticatedUI();
@@ -40,77 +32,82 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // NEW: Wait for Telegram WebApp to fully initialize
-  if (window.teleBlogApp.isTelegramWebApp) {
-    // Try multiple approaches to get initData
-    await waitForTelegramInit(tg, loading);
+  // Check Telegram WebApp availability
+  const tg = window.Telegram?.WebApp;
+  
+  if (tg) {
+    console.log('📱 Telegram WebApp detected');
+    tg.ready();
+    tg.expand();
+    
+    // Wait a bit for Telegram to initialize
+    setTimeout(() => {
+      handleTelegramAuth(tg, loading);
+    }, 1000);
   } else {
-    // Not in Telegram - show login button
+    console.log('🌐 Not in Telegram environment');
+    // Not in Telegram - show manual login options
     loginBtn.style.display = "flex";
     loading.classList.remove("active");
   }
 
-  loginBtn?.addEventListener("click", async () => {
-    if (window.teleBlogApp.isTelegramWebApp && tg.initData) {
-      await authenticateWithTelegram(tg.initData);
+  // Setup event listeners
+  loginBtn?.addEventListener("click", () => {
+    if (tg?.initData) {
+      authenticateWithTelegram(tg.initData);
     } else {
-      alert("Telegram authentication not available.\nPlease open TeleBlog inside Telegram.");
+      alert("Please open this app inside Telegram to use Telegram login.");
     }
   });
 
   devLoginBtn?.addEventListener("click", () => {
-    const fakeUser = {
-      id: 123456789,
-      first_name: "Dev",
-      last_name: "User",
-      username: "devuser",
-      language_code: "en"
+    // Simple dev login without complex initData
+    const devUser = {
+      id: "dev_001",
+      username: "developer",
+      display_name: "Development User",
+      role: "reader"
     };
     
-    const fakeInitData = `user=${encodeURIComponent(JSON.stringify(fakeUser))}&hash=dev_mode`;
-    authenticateWithTelegram(fakeInitData, true);
+    window.teleBlogApp.currentUser = devUser;
+    window.teleBlogApp.jwtToken = "dev_token_fake_jwt_123";
+    
+    localStorage.setItem("teleblog_user", JSON.stringify(devUser));
+    localStorage.setItem("teleblog_token", "dev_token_fake_jwt_123");
+    
+    showAuthenticatedUI();
+    showToast("Development login successful!", "success");
   });
 });
 
-// NEW: Function to wait for Telegram WebApp initialization
-async function waitForTelegramInit(tg, loading) {
-  const maxAttempts = 10;
-  const delay = 500;
-  
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    console.log(`Attempt ${attempt}: Checking for initData...`);
+function handleTelegramAuth(tg, loading) {
+  console.log('🔍 Checking Telegram initData...');
+  console.log('initData:', tg.initData);
+  console.log('initDataUnsafe:', tg.initDataUnsafe);
+  console.log('platform:', tg.platform);
+  console.log('version:', tg.version);
+
+  if (tg.initData) {
+    console.log('✅ initData available, authenticating...');
+    authenticateWithTelegram(tg.initData);
+  } else if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    console.log('⚠️ Using initDataUnsafe as fallback');
+    // Try to reconstruct initData from unsafe data
+    const user = tg.initDataUnsafe.user;
+    const reconstructedData = `user=${encodeURIComponent(JSON.stringify(user))}&auth_date=${Math.floor(Date.now()/1000)}&hash=telegram_unsafe_mode`;
+    authenticateWithTelegram(reconstructedData);
+  } else {
+    console.log('❌ No Telegram data available');
+    // Show login button for manual auth
+    document.getElementById("telegram-login-btn").style.display = "flex";
+    loading.classList.remove("active");
     
-    // Check if initData is available
-    if (tg.initData) {
-      console.log('✅ initData found:', tg.initData);
-      await authenticateWithTelegram(tg.initData);
-      return;
-    }
-    
-    // Alternative: Check initDataUnsafe
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      console.log('✅ initDataUnsafe found:', tg.initDataUnsafe.user);
-      // Try to reconstruct initData string
-      const userStr = JSON.stringify(tg.initDataUnsafe.user);
-      const reconstructedInitData = `user=${encodeURIComponent(userStr)}&auth_date=${tg.initDataUnsafe.auth_date || Math.floor(Date.now()/1000)}&hash=${tg.initDataUnsafe.hash || 'dev_hash'}`;
-      
-      await authenticateWithTelegram(reconstructedInitData);
-      return;
-    }
-    
-    // Wait before next attempt
-    if (attempt < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
+    // Show debug info
+    showToast("Telegram data not available. Using manual login.", "error");
   }
-  
-  // If we get here, Telegram auth failed
-  console.log('❌ Telegram authentication timeout');
-  document.getElementById("telegram-login-btn").style.display = "flex";
-  loading.classList.remove("active");
 }
 
-async function authenticateWithTelegram(initData, isDevMode = false) {
+async function authenticateWithTelegram(initData) {
   const loading = document.getElementById("loading-overlay");
   const loginBtn = document.getElementById("telegram-login-btn");
   
@@ -128,79 +125,82 @@ async function authenticateWithTelegram(initData, isDevMode = false) {
       body: JSON.stringify({
         initData,
         debug: {
-          timestamp: new Date().toISOString(),
-          isDevMode,
-          userAgent: navigator.userAgent
+          source: "telegram_webapp",
+          timestamp: new Date().toISOString()
         }
       }),
     });
 
-    const data = await response.json();
-    console.log('Auth response:', data);
-
     if (!response.ok) {
-      throw new Error(data.error || "Authentication failed");
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
-    // Store user data and token
-    window.teleBlogApp.currentUser = data.user;
-    window.teleBlogApp.jwtToken = data.token;
-    
-    localStorage.setItem("teleblog_token", data.token);
-    localStorage.setItem("teleblog_user", JSON.stringify(data.user));
+    const data = await response.json();
+    console.log('✅ Auth successful:', data);
 
-    console.log('✅ Authentication successful:', data.user.display_name);
-    showAuthenticatedUI();
+    if (data.user && data.token) {
+      // Store user data and token
+      window.teleBlogApp.currentUser = data.user;
+      window.teleBlogApp.jwtToken = data.token;
+      
+      localStorage.setItem("teleblog_token", data.token);
+      localStorage.setItem("teleblog_user", JSON.stringify(data.user));
+
+      showAuthenticatedUI();
+      showToast(`Welcome ${data.user.display_name}!`, "success");
+    } else {
+      throw new Error("Invalid response from server");
+    }
 
   } catch (error) {
-    console.error("❌ Authentication error:", error);
-    
-    // Show appropriate error message
-    if (error.message.includes("Telegram authentication")) {
-      alert("Telegram authentication failed. Please try again or contact support.");
-    } else if (error.message.includes("network") || error.message.includes("fetch")) {
-      alert("Network error. Please check your connection and try again.");
-    } else {
-      alert("Authentication failed: " + error.message);
-    }
+    console.error("❌ Authentication failed:", error);
     
     // Show login button again
     document.getElementById("telegram-login-btn").style.display = "flex";
+    
+    // Show user-friendly error
+    showToast("Login failed. Please try again.", "error");
+    
   } finally {
     loading.classList.remove("active");
   }
 }
 
 function showAuthenticatedUI() {
-  console.log('🔄 Showing authenticated UI for:', window.teleBlogApp.currentUser?.display_name);
+  console.log('🎉 Showing authenticated UI');
   
-  // Hide login screen
-  const loginScreen = document.getElementById("login-screen");
-  const mainApp = document.getElementById("main-app");
+  // Hide guest elements, show auth elements
+  document.querySelectorAll('.guest-only').forEach(el => {
+    el.style.display = 'none';
+  });
   
-  if (loginScreen) loginScreen.style.display = "none";
-  if (mainApp) mainApp.style.display = "block";
+  document.querySelectorAll('.auth-only').forEach(el => {
+    el.style.display = 'block';
+  });
 
-  // Update user info in UI
-  const userInfo = document.getElementById("user-info");
-  if (userInfo && window.teleBlogApp.currentUser) {
-    const user = window.teleBlogApp.currentUser;
-    userInfo.innerHTML = `
-      <div class="user-avatar">
-        ${user.avatar_url ? `<img src="${user.avatar_url}" alt="${user.display_name}">` : '👤'}
-      </div>
-      <div class="user-details">
-        <div class="user-name">${user.display_name}</div>
-        <div class="user-username">${user.username || 'Telegram User'}</div>
-      </div>
-    `;
+  // Update profile information
+  const profileName = document.getElementById("profile-name");
+  const profileAvatar = document.getElementById("profile-avatar");
+  
+  if (profileName && window.teleBlogApp.currentUser) {
+    profileName.textContent = window.teleBlogApp.currentUser.display_name;
   }
-
-  // Load posts
+  
+  // Load initial data
   loadPosts();
 }
 
 async function loadPosts() {
+  const container = document.getElementById("posts-container");
+  
+  if (!container) {
+    console.error('Posts container not found');
+    return;
+  }
+
+  container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-secondary-color);">Loading posts...</div>`;
+
   try {
     const response = await fetch(`${API_BASE}/posts`, {
       headers: {
@@ -209,164 +209,85 @@ async function loadPosts() {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch posts");
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
-    displayPosts(data.posts || []);
+    
+    if (data.posts && data.posts.length > 0) {
+      renderPosts(data.posts);
+    } else {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📰</div>
+          <h3>No posts yet</h3>
+          <p>Be the first to publish something!</p>
+        </div>
+      `;
+    }
   } catch (error) {
-    console.error("Error loading posts:", error);
-    document.getElementById("posts-container").innerHTML = `
-      <div class="error-message">
+    console.error("Failed to load posts:", error);
+    container.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: var(--error-color);">
         Failed to load posts. Please try again later.
       </div>
     `;
   }
 }
 
-function displayPosts(posts) {
+function renderPosts(posts) {
   const container = document.getElementById("posts-container");
   
-  if (!posts || posts.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h3>No posts yet</h3>
-        <p>Be the first to create a post!</p>
-      </div>
-    `;
-    return;
-  }
-
   container.innerHTML = posts.map(post => `
-    <div class="post-card" onclick="viewPost(${post.id})">
+    <div class="post-card">
       <div class="post-header">
-        <h3 class="post-title">${escapeHtml(post.title)}</h3>
-        ${post.is_premium ? '<span class="premium-badge">Premium</span>' : ''}
-      </div>
-      <p class="post-excerpt">${escapeHtml(post.excerpt)}</p>
-      <div class="post-footer">
         <div class="post-meta">
-          <span class="author">By ${escapeHtml(post.author)}</span>
-          <span class="date">${formatDate(post.date)}</span>
-          <span class="read-time">${post.read_time}</span>
+          <span class="post-author">${escapeHtml(post.author || 'Unknown')}</span>
+          <span class="post-date">${new Date(post.date).toLocaleDateString()}</span>
         </div>
+      </div>
+      <h3 class="post-title">${escapeHtml(post.title)}</h3>
+      <p class="post-excerpt">${escapeHtml(post.excerpt || '')}</p>
+      <div class="post-footer">
         <div class="post-stats">
-          <span class="views">👁️ ${post.view_count}</span>
-          <span class="likes">❤️ ${post.like_count}</span>
+          <span>❤️ ${post.like_count || 0}</span>
+          <span>👁️ ${post.view_count || 0}</span>
         </div>
+        <span class="read-time">${post.read_time || '1 min read'}</span>
       </div>
     </div>
   `).join('');
 }
 
-function viewPost(postId) {
-  alert(`View post ${postId} - Feature coming soon!`);
-}
-
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
-
-// Navigation functions
-function showSection(sectionName) {
-  // Hide all sections
-  document.querySelectorAll('.app-section').forEach(section => {
-    section.classList.remove('active');
-  });
-  
-  // Show target section
-  document.getElementById(`${sectionName}-section`).classList.add('active');
-  
-  // Update navigation
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  document.querySelector(`[onclick="showSection('${sectionName}')"]`).classList.add('active');
-  
-  // Load section-specific content
-  if (sectionName === 'posts') {
-    loadPosts();
-  } else if (sectionName === 'profile') {
-    loadProfile();
-  }
-}
-
-async function loadProfile() {
-  try {
-    const response = await fetch(`${API_BASE}/profile`, {
-      headers: {
-        "Authorization": `Bearer ${window.teleBlogApp.jwtToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch profile");
-    }
-
-    const data = await response.json();
-    displayProfile(data);
-  } catch (error) {
-    console.error("Error loading profile:", error);
-    document.getElementById("profile-content").innerHTML = `
-      <div class="error-message">
-        Failed to load profile. Please try again later.
-      </div>
-    `;
-  }
-}
-
-function displayProfile(data) {
-  const container = document.getElementById("profile-content");
-  const user = data.user;
-  const stats = data.stats;
-  
-  container.innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar">
-        ${user.avatar_url ? `<img src="${user.avatar_url}" alt="${user.display_name}">` : '👤'}
-      </div>
-      <div class="profile-info">
-        <h2>${escapeHtml(user.display_name)}</h2>
-        <p class="username">${user.username || 'No username'}</p>
-        <p class="user-id">ID: ${user.telegram_id}</p>
-        <p class="role">Role: ${user.role}</p>
-      </div>
-    </div>
-    
-    <div class="profile-stats">
-      <div class="stat-card">
-        <div class="stat-number">${stats.total_posts}</div>
-        <div class="stat-label">Posts</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${stats.total_likes}</div>
-        <div class="stat-label">Likes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${stats.total_views}</div>
-        <div class="stat-label">Views</div>
-      </div>
-    </div>
+function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span>${message}</span>
+    <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
   `;
+  
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
-// Initialize app when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    // This will be handled by the main event listener above
-  });
-} else {
-  // DOM already ready
-  console.log('DOM already ready, initializing app...');
+// Simple page switcher (keep your existing one)
+function switchPage(id) {
+  document.querySelectorAll(".page.auth-only").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById("nav-" + id).classList.add("active");
+  
+  // Load data for the active page
+  if (id === 'home') {
+    loadPosts();
+  }
 }
